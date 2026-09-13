@@ -74,6 +74,11 @@ export class AuthService {
         'Akun belum terverifikasi. Selesaikan verifikasi OTP terlebih dahulu.',
       );
     }
+    if (account.isActive === false) {
+      throw new UnauthorizedException(
+        'Akun telah dinonaktifkan. Hubungi Admin Kesiswaan untuk mengaktifkan kembali.',
+      );
+    }
 
     const isValid = this.hashing.verify(password, account.passwordHash);
     if (!isValid) {
@@ -163,6 +168,7 @@ export class AuthService {
         email: true,
         role: true,
         isVerified: true,
+        isActive: true,
         studentId: true,
         student: {
           select: { id: true, name: true, photoUrl: true, class: true },

@@ -21,11 +21,17 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   async validate(payload: JwtPayload): Promise<JwtPayload> {
     const account = await this.prisma.account.findUnique({
       where: { id: payload.sub },
-      select: { id: true, email: true, role: true, studentId: true },
+      select: { id: true, email: true, role: true, studentId: true, isActive: true },
     });
 
     if (!account) {
       throw new UnauthorizedException('Akun tidak ditemukan');
+    }
+
+    if (account.isActive === false) {
+      throw new UnauthorizedException(
+        'Akun telah dinonaktifkan. Hubungi Admin Kesiswaan.',
+      );
     }
 
     return {

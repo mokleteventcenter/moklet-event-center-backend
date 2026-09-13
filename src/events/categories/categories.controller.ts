@@ -46,6 +46,15 @@ export class CategoriesController {
     return new RawResponse(data);
   }
 
+  @Get('categories/:id/teams')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('PANITIA')
+  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: '[PANITIA] Mendapatkan tim pada satu cabang lomba' })
+  async findTeams(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
+    return new RawResponse(await this.categoriesService.findTeams(id, user.sub));
+  }
+
   @Patch('categories/:id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('PANITIA')

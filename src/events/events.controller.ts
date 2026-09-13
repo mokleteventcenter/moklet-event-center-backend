@@ -64,6 +64,14 @@ export class EventsController {
     return new Paginated(result.data, result.meta);
   }
 
+  @Get('managed/me')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'Mendapatkan event yang dibuat atau dikelola akun saat ini' })
+  async findManaged(@CurrentUser() user: JwtPayload) {
+    return this.eventsService.findManaged(user.sub, user.studentId);
+  }
+
   @Get(':id')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth('access-token')

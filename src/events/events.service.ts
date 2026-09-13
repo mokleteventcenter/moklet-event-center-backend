@@ -36,10 +36,26 @@ export class EventsService {
     return paginate(data, total, page, limit);
   }
 
+  async findManaged(accountId: string, studentId?: string | null) {
+    return this.prisma.event.findMany({
+      where: {
+        OR: [
+          { createdById: accountId },
+          ...(studentId ? [{ eventCommitteeMembers: { some: { studentId } } }] : []),
+        ],
+      },
+      orderBy: { eventDate: 'asc' },
+    });
+  }
+
   async findOne(id: string) {
     const event = await this.prisma.event.findUnique({
       where: { id },
-      include: { categories: true, eventSchedules: true },
+      include: {
+        categories: { include: { _count: { select: { teams: true, registrations: true } } } },
+        eventSchedules: true,
+        _count: { select: { categories: true } },
+      },
     });
     if (!event) throw new NotFoundException('Event tidak ditemukan');
     return event;

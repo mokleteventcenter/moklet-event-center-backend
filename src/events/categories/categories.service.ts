@@ -44,13 +44,26 @@ export class CategoriesService {
   }
 
   async findAllByEvent(eventId: string) {
-    return this.prisma.category.findMany({ where: { eventId } });
+    return this.prisma.category.findMany({
+      where: { eventId },
+      include: { _count: { select: { teams: true, registrations: true } } },
+    });
   }
 
   private async findOneOrThrow(id: string) {
     const category = await this.prisma.category.findUnique({ where: { id } });
     if (!category) throw new NotFoundException('Kategori/cabang lomba tidak ditemukan');
     return category;
+  }
+
+  async findTeams(id: string, accountId: string) {
+    const category = await this.findOneOrThrow(id);
+    await this.ownership.assertCanManage(category.eventId, accountId);
+    return this.prisma.team.findMany({
+      where: { categoryId: id },
+      include: { teamMembers: { include: { student: true } } },
+      orderBy: { name: 'asc' },
+    });
   }
 
   async update(id: string, accountId: string, dto: UpdateCategoryDto) {

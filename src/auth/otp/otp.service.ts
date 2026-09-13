@@ -89,6 +89,7 @@ export class OtpService {
     this.checkRateLimit(email);
     const existing = await this.prisma.account.findUnique({ where: { email } });
     if (!existing) return;
+    if (existing.isActive === false) return;
     await this.sendCode(email);
   }
 
