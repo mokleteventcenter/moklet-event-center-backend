@@ -30,27 +30,31 @@ async function bootstrap() {
     new GlobalExceptionFilter(),
   );
 
-  const config = new DocumentBuilder()
-    .setTitle('Moklet Event Hub')
-    .setDescription(
-      'Core backend API for Moklet Event Hub. Built with NestJS and PostgreSQL to handle dynamic event registrations and concurrency',
-    )
-    .setVersion('1.0')
-    .addBearerAuth(
-      {
-        type: 'http',
-        scheme: 'bearer',
-        bearerFormat: 'JWT',
-        description: 'Enter the JWT token from the login response',
-      },
-      'access-token',
-    )
-    .build();
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('docs', app, document, {
-    swaggerOptions: { persistAuthorization: true },
-  });
+  app.enableShutdownHooks();
+
+  if (process.env.NODE_ENV !== 'production') {
+    const config = new DocumentBuilder()
+      .setTitle('Moklet Event Hub')
+      .setDescription(
+        'Core backend API for Moklet Event Hub. Built with NestJS and PostgreSQL to handle dynamic event registrations and concurrency',
+      )
+      .setVersion('1.0')
+      .addBearerAuth(
+        {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT',
+          description: 'Enter the JWT token from the login response',
+        },
+        'access-token',
+      )
+      .build();
+    const document = SwaggerModule.createDocument(app, config);
+    SwaggerModule.setup('docs', app, document, {
+      swaggerOptions: { persistAuthorization: true },
+    });
+  }
 
   await app.listen(process.env.PORT ?? 3000, '0.0.0.0');
 }
-bootstrap();
+void bootstrap();

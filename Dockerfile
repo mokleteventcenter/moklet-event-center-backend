@@ -50,5 +50,6 @@ COPY --from=builder /app/dist ./dist
 
 EXPOSE 3000
 
-# Jalankan migrasi, seed, lalu start aplikasi (All-in-one command untuk menghindari bug Railway Pre-deploy)
-CMD ["sh", "-c", "npx prisma migrate deploy && npx prisma db seed && node dist/src/main.js"]
+# Migrasi selalu jalan; seed hanya saat RUN_SEED=true (deploy pertama),
+# supaya restart/redeploy tidak mengeksekusi seed berulang kali.
+CMD ["sh", "-c", "npx prisma migrate deploy && if [ \"$RUN_SEED\" = \"true\" ]; then npx prisma db seed; fi && node dist/src/main.js"]

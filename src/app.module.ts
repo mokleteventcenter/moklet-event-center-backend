@@ -24,6 +24,7 @@ import { TeamsModule } from './teams/teams.module';
 import { RegistrationsModule } from './registrations/registrations.module';
 import { SystemSettingModule } from './system-setting/system-setting.module';
 import { MailerModule } from './auth/mailer/mailer.module';
+import { HealthModule } from './health/health.module';
 
 @Module({
   imports: [
@@ -69,6 +70,7 @@ import { MailerModule } from './auth/mailer/mailer.module';
     TeamsModule,
     RegistrationsModule,
     MailerModule,
+    HealthModule,
   ],
   controllers: [AppController],
   providers: [AppService, { provide: APP_GUARD, useClass: ThrottlerGuard }],
