@@ -1,4 +1,5 @@
 import { BadRequestException } from '@nestjs/common';
+import { Prisma } from 'generated/prisma/client';
 
 export function resolveGroupKey(
   mode: string,
@@ -11,7 +12,9 @@ export function resolveGroupKey(
       return student.classId;
     case 'PER_ANGKATAN':
       if (student.angkatan == null) {
-        throw new BadRequestException('Data angkatan siswa belum terisi, hubungi admin');
+        throw new BadRequestException(
+          'Data angkatan siswa belum terisi, hubungi admin',
+        );
       }
       return String(student.angkatan);
     default:
@@ -45,7 +48,7 @@ export function validateGroupKeyMatch(
  * Returns true jika quotaConfirmed berubah dari false → true.
  */
 export async function checkAndConfirmQuota(
-  tx: any,
+  tx: Prisma.TransactionClient,
   teamId: string,
   category: {
     id: string;
@@ -78,7 +81,10 @@ export async function checkAndConfirmQuota(
     }
   }
 
-  if (category.teamCompositionMode === 'FREE' || category.maxTeamsPerGroup == null) {
+  if (
+    category.teamCompositionMode === 'FREE' ||
+    category.maxTeamsPerGroup == null
+  ) {
     await tx.team.update({
       where: { id: teamId },
       data: { quotaConfirmed: true },

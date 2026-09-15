@@ -27,7 +27,7 @@ import { MailerModule } from './auth/mailer/mailer.module';
 
 @Module({
   imports: [
-    AppConfigModule.forProject(authEnvSchema), 
+    AppConfigModule.forProject(authEnvSchema),
     ThrottlerModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
@@ -35,34 +35,36 @@ import { MailerModule } from './auth/mailer/mailer.module';
           {
             ttl: config.get<number>('THROTTLE_TTL')! * 1000,
             limit: config.get<number>('THROTTLE_LIMIT')!,
-            getTracker: (req: { headers: Record<string, unknown>; ip?: string }) =>
+            getTracker: (req: {
+              headers: Record<string, unknown>;
+              ip?: string;
+            }) =>
               (req.headers['cf-connecting-ip'] as string) ||
-              (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() ||
+              (req.headers['x-forwarded-for'] as string)
+                ?.split(',')[0]
+                ?.trim() ||
               req.ip ||
               'unknown',
           },
         ],
       }),
     }),
-    HashingModule, 
-    PrismaModule, 
-    UploadModule, 
+    HashingModule,
+    PrismaModule,
+    UploadModule,
 
-    AuthModule, 
-    StudentsModule, 
-    ClassesModule, 
+    AuthModule,
+    StudentsModule,
+    ClassesModule,
     SystemSettingModule,
-    EventsModule, 
-    AnnouncementsModule, 
-    ExportModule, 
-    TeamsModule, 
+    EventsModule,
+    AnnouncementsModule,
+    ExportModule,
+    TeamsModule,
     RegistrationsModule,
-    MailerModule
+    MailerModule,
   ],
   controllers: [AppController],
-  providers: [
-    AppService,
-    { provide: APP_GUARD, useClass: ThrottlerGuard },
-  ],
+  providers: [AppService, { provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
 export class AppModule {}
