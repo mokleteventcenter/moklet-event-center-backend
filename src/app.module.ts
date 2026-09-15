@@ -36,15 +36,21 @@ import { MailerModule } from './auth/mailer/mailer.module';
             ttl: config.get<number>('THROTTLE_TTL')! * 1000,
             limit: config.get<number>('THROTTLE_LIMIT')!,
             getTracker: (req: {
-              headers: Record<string, unknown>;
+              headers?: Record<string, unknown>;
               ip?: string;
-            }) =>
-              (req.headers['cf-connecting-ip'] as string) ||
-              (req.headers['x-forwarded-for'] as string)
-                ?.split(',')[0]
-                ?.trim() ||
-              req.ip ||
-              'unknown',
+            }) => {
+              const getHeader = (name: string): string | undefined => {
+                const val = req.headers?.[name];
+                if (Array.isArray(val)) return String(val[0]);
+                return typeof val === 'string' ? val : undefined;
+              };
+              return (
+                getHeader('cf-connecting-ip') ||
+                getHeader('x-forwarded-for')?.split(',')[0]?.trim() ||
+                req.ip ||
+                'unknown'
+              );
+            },
           },
         ],
       }),
