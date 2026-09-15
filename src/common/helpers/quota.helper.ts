@@ -48,6 +48,7 @@ export async function checkAndConfirmQuota(
   tx: any,
   teamId: string,
   category: {
+    id: string;
     teamCompositionMode: string;
     maxTeamsPerGroup: number | null;
     maxTotalTeams: number | null;
@@ -56,6 +57,8 @@ export async function checkAndConfirmQuota(
   currentMemberCount: number,
 ): Promise<boolean> {
   if (currentMemberCount < category.minMember) return false;
+
+  await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${category.id}))`;
 
   const team = await tx.team.findUniqueOrThrow({
     where: { id: teamId },

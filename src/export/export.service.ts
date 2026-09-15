@@ -1,7 +1,15 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import * as ExcelJS from 'exceljs';
+import { Worker } from 'node:worker_threads';
+import path from 'node:path';
 import { PrismaService } from '../prisma/prisma.service';
 import { EventOwnershipService } from '../events/event-ownership.service';
+
+type SheetSpec = {
+  sheetName: string;
+  columns: { header: string; key: string; width: number }[];
+  rows: Record<string, unknown>[];
+};
 
 @Injectable()
 export class ExportService {
@@ -10,10 +18,19 @@ export class ExportService {
     private readonly ownership: EventOwnershipService,
   ) {}
 
-  private async buildCategoryWorksheet(
-    workbook: ExcelJS.Workbook,
-    categoryId: string,
-  ) {
+  private buildWorkbook(sheets: SheetSpec[]): Promise<Buffer> {
+    return new Promise((resolve, reject) => {
+      const workerPath = path.join(__dirname, 'excel.worker.js');
+      const worker = new Worker(workerPath, { workerData: { sheets } });
+      worker.on('message', (buf: Buffer) => {
+        worker.terminate();
+        resolve(Buffer.from(buf));
+      });
+      worker.on('error', reject);
+    });
+  }
+
+  private async collectCategorySheet(categoryId: string): Promise<SheetSpec> {
     const category = await this.prisma.category.findUnique({
       where: { id: categoryId },
       include: {
@@ -34,24 +51,25 @@ export class ExportService {
     }
 
     let safeSheetName = category.name.replace(/[:\\/?*\[\]]/g, '').substring(0, 31);
-    
-    if (workbook.getWorksheet(safeSheetName)) {
-      safeSheetName = `${safeSheetName.substring(0, 25)}_${category.id.substring(0, 4)}`;
+
+    if (safeSheetName.length === 0) {
+      safeSheetName = category.id.substring(0, 31);
     }
 
-    const sheet = workbook.addWorksheet(safeSheetName);
+    const columns: SheetSpec['columns'] = [];
+    const rows: Record<string, unknown>[] = [];
 
     if (category.maxMember === 1) {
-      sheet.columns = [
+      columns.push(
         { header: 'No', key: 'no', width: 5 },
         { header: 'Nama Peserta', key: 'name', width: 30 },
         { header: 'Kelas', key: 'grade', width: 15 },
         { header: 'Kontak / Email', key: 'email', width: 30 },
         { header: 'Waktu Daftar', key: 'registeredAt', width: 20 },
-      ];
+      );
 
       category.registrations.forEach((reg, index) => {
-        sheet.addRow({
+        rows.push({
           no: index + 1,
           name: reg.student.name,
           grade: reg.student.class.name,
@@ -60,7 +78,7 @@ export class ExportService {
         });
       });
     } else {
-      const columns = [
+      columns.push(
         { header: 'No', key: 'no', width: 5 },
         { header: 'Kode Tim', key: 'code', width: 12 },
         { header: 'Nama Tim', key: 'teamName', width: 25 },
@@ -68,21 +86,19 @@ export class ExportService {
         { header: 'Nama Ketua', key: 'leaderName', width: 25 },
         { header: 'Kelas Ketua', key: 'leaderGrade', width: 15 },
         { header: 'Kontak Ketua', key: 'leaderContact', width: 25 },
-      ];
+      );
 
       for (let i = 2; i <= category.maxMember; i++) {
         columns.push({ header: `Nama Anggota ${i}`, key: `member${i}Name`, width: 25 });
         columns.push({ header: `Kelas Anggota ${i}`, key: `member${i}Grade`, width: 15 });
       }
       columns.push({ header: 'Waktu Daftar', key: 'registeredAt', width: 20 });
-      
-      sheet.columns = columns;
 
       category.teams.forEach((team, index) => {
         const leader = team.teamMembers.find((m) => m.isLeader);
         const members = team.teamMembers.filter((m) => !m.isLeader);
-        
-        const rowData: any = {
+
+        const rowData: Record<string, unknown> = {
           no: index + 1,
           code: team.code,
           teamName: team.name,
@@ -99,14 +115,11 @@ export class ExportService {
           rowData[`member${i}Grade`] = member ? member.student.class.name : '-';
         }
 
-        sheet.addRow(rowData);
+        rows.push(rowData);
       });
     }
 
-    sheet.getRow(1).font = { bold: true };
-    sheet.getRow(1).alignment = { horizontal: 'center' };
-
-    return category;
+    return { sheetName: safeSheetName, columns, rows };
   }
 
   async exportCategoryData(categoryId: string, accountId: string) {
@@ -115,26 +128,25 @@ export class ExportService {
 
     await this.ownership.assertCanManage(categoryLookup.eventId, accountId);
 
-    const workbook = new ExcelJS.Workbook();
-    workbook.creator = 'Moklet Event Hub';
-    workbook.created = new Date();
-
-    const category = await this.buildCategoryWorksheet(workbook, categoryId);
+    const sheet = await this.collectCategorySheet(categoryId);
+    const event = await this.prisma.event.findUnique({
+      where: { id: categoryLookup.eventId },
+    });
+    const buffer = await this.buildWorkbook([sheet]);
 
     await this.prisma.exportLog.create({
       data: {
-        categoryId: category.id,
+        categoryId: categoryLookup.id,
         eventId: null,
         exportedById: accountId,
       },
     });
 
-    const buffer = await workbook.xlsx.writeBuffer();
-    const cleanEventName = category.event.name.replace(/[^a-zA-Z0-9]/g, '_');
-    const cleanCatName = category.name.replace(/[^a-zA-Z0-9]/g, '_');
-    
+    const cleanEventName = event!.name.replace(/[^a-zA-Z0-9]/g, '_');
+    const cleanCatName = categoryLookup.name.replace(/[^a-zA-Z0-9]/g, '_');
+
     return {
-      buffer: buffer as unknown as Buffer,
+      buffer,
       fileName: `Data_Lomba_${cleanCatName}_${cleanEventName}.xlsx`,
     };
   }
@@ -148,18 +160,20 @@ export class ExportService {
 
     await this.ownership.assertCanManage(eventId, accountId);
 
-    const workbook = new ExcelJS.Workbook();
-    workbook.creator = 'Moklet Event Hub';
-    workbook.created = new Date();
-
+    const sheets: SheetSpec[] = [];
     if (event.categories.length === 0) {
-      const sheet = workbook.addWorksheet('Belum Ada Lomba');
-      sheet.addRow(['Event ini belum memiliki cabang lomba.']);
+      sheets.push({
+        sheetName: 'Belum Ada Lomba',
+        columns: [{ header: 'Info', key: 'info', width: 40 }],
+        rows: [{ info: 'Event ini belum memiliki cabang lomba.' }],
+      });
     } else {
       for (const category of event.categories) {
-        await this.buildCategoryWorksheet(workbook, category.id);
+        sheets.push(await this.collectCategorySheet(category.id));
       }
     }
+
+    const buffer = await this.buildWorkbook(sheets);
 
     await this.prisma.exportLog.create({
       data: {
@@ -169,11 +183,10 @@ export class ExportService {
       },
     });
 
-    const buffer = await workbook.xlsx.writeBuffer();
     const cleanEventName = event.name.replace(/[^a-zA-Z0-9]/g, '_');
-    
+
     return {
-      buffer: buffer as unknown as Buffer,
+      buffer,
       fileName: `Data_Seluruh_Lomba_${cleanEventName}.xlsx`,
     };
   }

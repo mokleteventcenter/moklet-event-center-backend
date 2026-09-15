@@ -1,4 +1,5 @@
 import { NestFactory } from '@nestjs/core';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from './app.module';
 import { createValidationPipe } from './common/pipes/validation.pipe.config';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
@@ -8,9 +9,10 @@ import { PrismaExceptionFilter } from './common/filters/prisma-exception.filter'
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
   // ── Injected by @averildwi/nest-common ──
+  app.set('trust proxy', 1);
   const allowedOrigins = process.env.FRONTEND_URL
     ? process.env.FRONTEND_URL.split(',').map((origin) => origin.trim())
     : [];
