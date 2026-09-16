@@ -37,7 +37,10 @@ import { RequestPasswordResetDto } from './dto/request-password-reset.dto';
 import { VerifyPasswordResetDto } from './dto/verify-password-reset.dto';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
-import { RawResponse, MessageResponse } from '../common/interceptors/transform.interceptor';
+import {
+  RawResponse,
+  MessageResponse,
+} from '../common/interceptors/transform.interceptor';
 import type { GoogleProfilePayload } from './strategies/google.strategy';
 
 @ApiTags('Autentikasi & Akun (Auth)')
@@ -51,13 +54,18 @@ export class AuthController {
   @Get('google')
   @UseGuards(GoogleAuthGuard)
   @ApiOperation({ summary: 'Memicu login menggunakan Google OAuth (siswa)' })
-  @ApiResponse({ status: 302, description: 'Mengalihkan pengguna ke halaman login Google.' })
+  @ApiResponse({
+    status: 302,
+    description: 'Mengalihkan pengguna ke halaman login Google.',
+  })
   googleLogin() {}
 
   @Get('google/callback')
   @UseGuards(GoogleAuthGuard)
   @ApiOperation({ summary: 'Callback setelah sukses login Google' })
-  @ApiOkResponse({ description: 'Mengembalikan data login awal dan status verifikasi akun.' })
+  @ApiOkResponse({
+    description: 'Mengembalikan data login awal dan status verifikasi akun.',
+  })
   async googleCallback(@CurrentUser() profile: GoogleProfilePayload) {
     const result = await this.authService.handleGoogleLogin(profile);
     return new RawResponse(result);
@@ -65,8 +73,12 @@ export class AuthController {
 
   @Post('register')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Register tradisional (email + password) — khusus siswa' })
-  @ApiOkResponse({ description: 'Akun dibuat, kode OTP dikirim ke email untuk verifikasi.' })
+  @ApiOperation({
+    summary: 'Register tradisional (email + password) — khusus siswa',
+  })
+  @ApiOkResponse({
+    description: 'Akun dibuat, kode OTP dikirim ke email untuk verifikasi.',
+  })
   async register(@Body() dto: RegisterDto) {
     await this.authService.register(dto.email, dto.password);
     return new MessageResponse(
@@ -90,9 +102,14 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth('access-token')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Setup password (khusus siswa jalur Google, sekali saja)' })
+  @ApiOperation({
+    summary: 'Setup password (khusus siswa jalur Google, sekali saja)',
+  })
   @ApiOkResponse({ description: 'Password berhasil diatur.' })
-  @ApiResponse({ status: 400, description: 'Password sudah pernah diatur sebelumnya.' })
+  @ApiResponse({
+    status: 400,
+    description: 'Password sudah pernah diatur sebelumnya.',
+  })
   async setupPassword(
     @CurrentUser() user: JwtPayload,
     @Body() dto: SetupPasswordDto,
@@ -103,8 +120,12 @@ export class AuthController {
 
   @Post('password/reset-request')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Minta kode OTP untuk reset password (siswa & panitia)' })
-  @ApiOkResponse({ description: 'Jika email terdaftar, kode OTP akan dikirim.' })
+  @ApiOperation({
+    summary: 'Minta kode OTP untuk reset password (siswa & panitia)',
+  })
+  @ApiOkResponse({
+    description: 'Jika email terdaftar, kode OTP akan dikirim.',
+  })
   async requestPasswordReset(@Body() dto: RequestPasswordResetDto) {
     await this.authService.requestPasswordReset(dto.email);
     return new MessageResponse(
@@ -117,16 +138,24 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Verifikasi OTP dan set password baru' })
   @ApiOkResponse({ description: 'Password berhasil diubah.' })
-  @ApiResponse({ status: 401, description: 'Kode OTP tidak valid atau kedaluwarsa.' })
+  @ApiResponse({
+    status: 401,
+    description: 'Kode OTP tidak valid atau kedaluwarsa.',
+  })
   async verifyPasswordReset(@Body() dto: VerifyPasswordResetDto) {
     await this.authService.resetPassword(dto.email, dto.code, dto.newPassword);
-    return new MessageResponse(null, 'Password berhasil diubah, silakan login kembali');
+    return new MessageResponse(
+      null,
+      'Password berhasil diubah, silakan login kembali',
+    );
   }
 
   @Post('otp/request')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Meminta pengiriman kode OTP ke email' })
-  @ApiOkResponse({ description: 'Kode OTP berhasil terkirim ke email siswa/panitia.' })
+  @ApiOkResponse({
+    description: 'Kode OTP berhasil terkirim ke email siswa/panitia.',
+  })
   async requestOtp(@Body() dto: RequestOtpDto) {
     await this.otpService.requestOtp(dto.email);
     return new MessageResponse(null, 'Kode OTP telah dikirim ke email kamu');
@@ -134,8 +163,13 @@ export class AuthController {
 
   @Post('otp/verify')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Verifikasi kode OTP untuk mendapatkan Access Token (JWT)' })
-  @ApiOkResponse({ description: 'OTP Valid, mengembalikan JWT Token untuk akses fitur aplikasi.' })
+  @ApiOperation({
+    summary: 'Verifikasi kode OTP untuk mendapatkan Access Token (JWT)',
+  })
+  @ApiOkResponse({
+    description:
+      'OTP Valid, mengembalikan JWT Token untuk akses fitur aplikasi.',
+  })
   async verifyOtp(@Body() dto: VerifyOtpDto) {
     await this.otpService.verifyOtp(dto.email, dto.code);
     const token = await this.authService.issueTokenAfterOtpVerified(dto.email);
@@ -146,17 +180,28 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth('access-token')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Menghubungkan akun dengan data Siswa (Identity Binding)' })
-  @ApiOkResponse({ description: 'Akun berhasil ditautkan ke identitas siswa. Mengembalikan JWT token baru.' })
-  @ApiResponse({ status: 409, description: 'Konflik! Siswa sudah terikat dengan akun lain.' })
+  @ApiOperation({
+    summary: 'Menghubungkan akun dengan data Siswa (Identity Binding)',
+  })
+  @ApiOkResponse({
+    description:
+      'Akun berhasil ditautkan ke identitas siswa. Mengembalikan JWT token baru.',
+  })
+  @ApiResponse({
+    status: 409,
+    description: 'Konflik! Siswa sudah terikat dengan akun lain.',
+  })
   async bindIdentity(
     @CurrentUser() user: JwtPayload,
     @Body() dto: BindIdentityDto,
   ) {
-    const updatedAccount = await this.authService.bindIdentity(user.sub, dto.studentId);
-    
-    const newToken = this.authService.issueToken(updatedAccount); 
-    
+    const updatedAccount = await this.authService.bindIdentity(
+      user.sub,
+      dto.studentId,
+    );
+
+    const newToken = this.authService.issueToken(updatedAccount);
+
     return new MessageResponse(
       {
         token: newToken,
@@ -167,7 +212,7 @@ export class AuthController {
           studentId: updatedAccount.studentId,
         },
       },
-      'Berhasil menghubungkan akun ke data siswa'
+      'Berhasil menghubungkan akun ke data siswa',
     );
   }
 
@@ -175,10 +220,17 @@ export class AuthController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN_KESISWAAN')
   @ApiBearerAuth('access-token')
-  @ApiOperation({ summary: '[ADMIN_KESISWAAN] Membuat akun panitia baru (Khusus Kesiswaan)' })
-  @ApiCreatedResponse({ description: 'Akun panitia berhasil didaftarkan di sistem.' })
+  @ApiOperation({
+    summary: '[ADMIN_KESISWAAN] Membuat akun panitia baru (Khusus Kesiswaan)',
+  })
+  @ApiCreatedResponse({
+    description: 'Akun panitia berhasil didaftarkan di sistem.',
+  })
   async createPanitia(@Body() dto: CreatePanitiaDto) {
-    const created = await this.authService.createPanitia(dto.email, dto.password);
+    const created = await this.authService.createPanitia(
+      dto.email,
+      dto.password,
+    );
     return new MessageResponse(
       created,
       'Akun panitia dibuat. Panitia bisa langsung login pakai email & password ini.',
@@ -189,7 +241,9 @@ export class AuthController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN_KESISWAAN')
   @ApiBearerAuth('access-token')
-  @ApiOperation({ summary: '[ADMIN_KESISWAAN] Ambil seluruh daftar akun panitia' })
+  @ApiOperation({
+    summary: '[ADMIN_KESISWAAN] Ambil seluruh daftar akun panitia',
+  })
   @ApiOkResponse({ description: 'Daftar akun panitia.' })
   async findAllPanitia() {
     const panitiaList = await this.authService.findAllPanitia();
@@ -200,14 +254,19 @@ export class AuthController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN_KESISWAAN')
   @ApiBearerAuth('access-token')
-  @ApiOperation({ summary: '[ADMIN_KESISWAAN] Aktifkan / non-aktifkan akun panitia' })
+  @ApiOperation({
+    summary: '[ADMIN_KESISWAAN] Aktifkan / non-aktifkan akun panitia',
+  })
   @ApiOkResponse({ description: 'Status akun panitia berhasil diubah.' })
   @ApiResponse({ status: 404, description: 'Akun panitia tidak ditemukan.' })
   async updatePanitiaStatus(
     @Param('id') id: string,
     @Body() dto: UpdatePanitiaStatusDto,
   ) {
-    const updated = await this.authService.updatePanitiaStatus(id, dto.isActive);
+    const updated = await this.authService.updatePanitiaStatus(
+      id,
+      dto.isActive,
+    );
     return new MessageResponse(
       updated,
       `Akun panitia berhasil ${dto.isActive ? 'diaktifkan' : 'dinonaktifkan'}`,
@@ -229,8 +288,12 @@ export class AuthController {
   @Get('me')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth('access-token')
-  @ApiOperation({ summary: 'Mengambil informasi detail akun yang sedang login' })
-  @ApiOkResponse({ description: 'Mengembalikan data profil akun beserta relasi data siswanya.' })
+  @ApiOperation({
+    summary: 'Mengambil informasi detail akun yang sedang login',
+  })
+  @ApiOkResponse({
+    description: 'Mengembalikan data profil akun beserta relasi data siswanya.',
+  })
   async me(@CurrentUser() user: JwtPayload) {
     return this.authService.getMe(user.sub);
   }

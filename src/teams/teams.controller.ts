@@ -1,5 +1,23 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards, BadRequestException } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags, ApiOperation, ApiParam, ApiOkResponse, ApiCreatedResponse, ApiResponse } from '@nestjs/swagger';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  UseGuards,
+  BadRequestException,
+} from '@nestjs/common';
+import {
+  ApiBearerAuth,
+  ApiTags,
+  ApiOperation,
+  ApiParam,
+  ApiOkResponse,
+  ApiCreatedResponse,
+  ApiResponse,
+} from '@nestjs/swagger';
 import { TeamsService } from './teams.service';
 import { CreateTeamDto } from './dto/create-team.dto';
 import { JoinTeamDto } from './dto/join-team.dto';
@@ -14,7 +32,9 @@ import type { JwtPayload } from '../auth/interfaces/jwt-payload.interface';
 
 function requireStudentId(user: JwtPayload): string {
   if (!user.studentId) {
-    throw new BadRequestException('Akun kamu belum terhubung ke data siswa (bind-identity dulu)');
+    throw new BadRequestException(
+      'Akun kamu belum terhubung ke data siswa (bind-identity dulu)',
+    );
   }
   return user.studentId;
 }
@@ -28,27 +48,52 @@ export class TeamsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('SISWA')
   @ApiBearerAuth('access-token')
-  @ApiOperation({ summary: '[SISWA] Buat tim baru untuk kelompok lomba (User otomatis jadi leader)' })
-  @ApiCreatedResponse({ description: 'Tim berhasil dibuat, pembuat otomatis menjadi leader' })
-  @ApiResponse({ status: 400, description: 'Input data tidak valid / Akun belum di-bind ke data siswa / Syarat pendaftaran tidak terpenuhi' })
+  @ApiOperation({
+    summary:
+      '[SISWA] Buat tim baru untuk kelompok lomba (User otomatis jadi leader)',
+  })
+  @ApiCreatedResponse({
+    description: 'Tim berhasil dibuat, pembuat otomatis menjadi leader',
+  })
+  @ApiResponse({
+    status: 400,
+    description:
+      'Input data tidak valid / Akun belum di-bind ke data siswa / Syarat pendaftaran tidak terpenuhi',
+  })
   @ApiResponse({ status: 403, description: 'Akses ditolak (Hanya role SISWA)' })
-  @ApiResponse({ status: 409, description: 'Siswa sudah terdaftar di tim/kategori lomba ini' })
+  @ApiResponse({
+    status: 409,
+    description: 'Siswa sudah terdaftar di tim/kategori lomba ini',
+  })
   async create(@CurrentUser() user: JwtPayload, @Body() dto: CreateTeamDto) {
     const studentId = requireStudentId(user);
     const created = await this.teamsService.create(studentId, dto);
-    return new MessageResponse(created, 'Tim berhasil dibuat, kamu jadi leader');
+    return new MessageResponse(
+      created,
+      'Tim berhasil dibuat, kamu jadi leader',
+    );
   }
 
   @Post('join')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('SISWA')
   @ApiBearerAuth('access-token')
-  @ApiOperation({ summary: '[SISWA] Bergabung ke tim yang sudah ada menggunakan kode tim' })
+  @ApiOperation({
+    summary: '[SISWA] Bergabung ke tim yang sudah ada menggunakan kode tim',
+  })
   @ApiCreatedResponse({ description: 'Berhasil bergabung ke dalam tim' })
-  @ApiResponse({ status: 400, description: 'Kode tim tidak valid / Akun belum di-bind ke data siswa / Kuota tim sudah penuh' })
+  @ApiResponse({
+    status: 400,
+    description:
+      'Kode tim tidak valid / Akun belum di-bind ke data siswa / Kuota tim sudah penuh',
+  })
   @ApiResponse({ status: 403, description: 'Akses ditolak (Hanya role SISWA)' })
   @ApiResponse({ status: 404, description: 'Kode tim tidak ditemukan' })
-  @ApiResponse({ status: 409, description: 'Tim sudah dikunci atau siswa sudah memiliki tim di kategori ini' })
+  @ApiResponse({
+    status: 409,
+    description:
+      'Tim sudah dikunci atau siswa sudah memiliki tim di kategori ini',
+  })
   async join(@CurrentUser() user: JwtPayload, @Body() dto: JoinTeamDto) {
     const studentId = requireStudentId(user);
     const team = await this.teamsService.join(studentId, dto.code);
@@ -59,12 +104,21 @@ export class TeamsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('SISWA')
   @ApiBearerAuth('access-token')
-  @ApiOperation({ summary: '[SISWA] Keluar dari tim yang diikuti (Self leave)' })
+  @ApiOperation({
+    summary: '[SISWA] Keluar dari tim yang diikuti (Self leave)',
+  })
   @ApiParam({ name: 'id', description: 'ID unik tim' })
   @ApiOkResponse({ description: 'Berhasil keluar dari tim' })
-  @ApiResponse({ status: 400, description: 'Akun belum di-bind ke data siswa / Leader tidak bisa keluar sebelum transfer kepemimpinan atau hapus tim' })
+  @ApiResponse({
+    status: 400,
+    description:
+      'Akun belum di-bind ke data siswa / Leader tidak bisa keluar sebelum transfer kepemimpinan atau hapus tim',
+  })
   @ApiResponse({ status: 403, description: 'Akses ditolak (Hanya role SISWA)' })
-  @ApiResponse({ status: 404, description: 'Tim tidak ditemukan atau kamu bukan anggota tim ini' })
+  @ApiResponse({
+    status: 404,
+    description: 'Tim tidak ditemukan atau kamu bukan anggota tim ini',
+  })
   @ApiResponse({ status: 409, description: 'Tim sudah dikunci' })
   async leave(
     @Param('id') teamId: string,
@@ -80,11 +134,20 @@ export class TeamsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('SISWA')
   @ApiBearerAuth('access-token')
-  @ApiOperation({ summary: '[SISWA] Kunci tim agar anggota tidak bisa masuk/keluar lagi (Khusus Leader)' })
+  @ApiOperation({
+    summary:
+      '[SISWA] Kunci tim agar anggota tidak bisa masuk/keluar lagi (Khusus Leader)',
+  })
   @ApiParam({ name: 'id', description: 'ID unik tim' })
   @ApiOkResponse({ description: 'Tim berhasil dikunci' })
-  @ApiResponse({ status: 400, description: 'Jumlah anggota belum memenuhi batas minimum tim' })
-  @ApiResponse({ status: 403, description: 'Akses ditolak (Hanya Leader tim yang berhak mengunci tim)' })
+  @ApiResponse({
+    status: 400,
+    description: 'Jumlah anggota belum memenuhi batas minimum tim',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Akses ditolak (Hanya Leader tim yang berhak mengunci tim)',
+  })
   @ApiResponse({ status: 404, description: 'Tim tidak ditemukan' })
   @ApiResponse({ status: 409, description: 'Tim sudah dalam kondisi dikunci' })
   async lock(@Param('id') teamId: string, @CurrentUser() user: JwtPayload) {
@@ -95,12 +158,16 @@ export class TeamsController {
 
   @Patch(':id/status')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('PANITIA')
+  @Roles('PANITIA', 'SISWA')
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: '[PANITIA] Mendiskualifikasi tim dari lomba' })
   @ApiParam({ name: 'id', description: 'ID unik tim' })
   @ApiOkResponse({ description: 'Tim berhasil didiskualifikasi' })
-  @ApiResponse({ status: 403, description: 'Akses ditolak (Hanya panitia pemilik event yang berhak mendiskualifikasi)' })
+  @ApiResponse({
+    status: 403,
+    description:
+      'Akses ditolak (Hanya panitia pemilik event yang berhak mendiskualifikasi)',
+  })
   @ApiResponse({ status: 404, description: 'Tim tidak ditemukan' })
   async updateStatus(
     @Param('id') teamId: string,
@@ -114,7 +181,9 @@ export class TeamsController {
   @Get(':id')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth('access-token')
-  @ApiOperation({ summary: 'Mendapatkan detail informasi tim dan daftar anggotanya' })
+  @ApiOperation({
+    summary: 'Mendapatkan detail informasi tim dan daftar anggotanya',
+  })
   @ApiParam({ name: 'id', description: 'ID unik tim' })
   @ApiOkResponse({ description: 'Detail tim berhasil diambil' })
   @ApiResponse({ status: 404, description: 'Tim tidak ditemukan' })

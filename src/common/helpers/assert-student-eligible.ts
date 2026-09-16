@@ -12,7 +12,9 @@ export async function assertStudentEligible(
   });
 
   if (!student || student.deletedAt) {
-    throw new BadRequestException('Data siswa tidak valid atau sudah tidak aktif');
+    throw new BadRequestException(
+      'Data siswa tidak valid atau sudah tidak aktif',
+    );
   }
 
   if (excludeGrade12 && student.class.grade === 'XII') {

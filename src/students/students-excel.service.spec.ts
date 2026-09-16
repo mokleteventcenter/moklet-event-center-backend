@@ -1,6 +1,12 @@
-import { computeSyncDiff, SyncRow, ActiveStudentForDiff } from './students-excel.service';
+import {
+  computeSyncDiff,
+  SyncRow,
+  ActiveStudentForDiff,
+} from './students-excel.service';
 
-function row(overrides: Partial<SyncRow & { classId: string }>): SyncRow & { classId: string } {
+function row(
+  overrides: Partial<SyncRow & { classId: string }>,
+): SyncRow & { classId: string } {
   return {
     row: 2,
     name: 'Test Siswa',
@@ -12,7 +18,9 @@ function row(overrides: Partial<SyncRow & { classId: string }>): SyncRow & { cla
   };
 }
 
-function activeStudent(overrides: Partial<ActiveStudentForDiff>): ActiveStudentForDiff {
+function activeStudent(
+  overrides: Partial<ActiveStudentForDiff>,
+): ActiveStudentForDiff {
   return {
     id: 'student-1',
     nis: '0001',
@@ -35,7 +43,14 @@ describe('computeSyncDiff', () => {
   });
 
   it('mendeteksi perpindahan kelas sebagai toUpdate ketika classId berbeda', () => {
-    const rows = [row({ nis: '0001', grade: 'XI', className: 'RPL 7', classId: 'class-xi-rpl-7' })];
+    const rows = [
+      row({
+        nis: '0001',
+        grade: 'XI',
+        className: 'RPL 7',
+        classId: 'class-xi-rpl-7',
+      }),
+    ];
     const existing = [activeStudent({ nis: '0001', classId: 'class-x-rpl-1' })];
 
     const result = computeSyncDiff(rows, existing);
@@ -86,13 +101,40 @@ describe('computeSyncDiff', () => {
 
   it('menangani skenario campuran (create + update + graduate + warning) sekaligus, sesuai kasus nyata yang sudah diuji manual', () => {
     const rows = [
-      row({ nis: '9999', name: 'Siswa Baru', grade: 'X', className: 'RPL 2', classId: 'class-x-rpl-2' }),
-      row({ nis: '0002', name: 'Naik Kelas', grade: 'XII', className: 'RPL 2', classId: 'class-xii-rpl-2' }),
+      row({
+        nis: '9999',
+        name: 'Siswa Baru',
+        grade: 'X',
+        className: 'RPL 2',
+        classId: 'class-x-rpl-2',
+      }),
+      row({
+        nis: '0002',
+        name: 'Naik Kelas',
+        grade: 'XII',
+        className: 'RPL 2',
+        classId: 'class-xii-rpl-2',
+      }),
     ];
     const existing = [
-      activeStudent({ nis: '0001', name: 'Lulus', class: { grade: 'XII', name: 'RPL 1' }, classId: 'class-xii-rpl-1' }),
-      activeStudent({ nis: '0002', name: 'Naik Kelas', class: { grade: 'XI', name: 'RPL 4' }, classId: 'class-xi-rpl-4' }),
-      activeStudent({ nis: '0003', name: 'Kelewat', class: { grade: 'X', name: 'RPL 3' }, classId: 'class-x-rpl-3' }),
+      activeStudent({
+        nis: '0001',
+        name: 'Lulus',
+        class: { grade: 'XII', name: 'RPL 1' },
+        classId: 'class-xii-rpl-1',
+      }),
+      activeStudent({
+        nis: '0002',
+        name: 'Naik Kelas',
+        class: { grade: 'XI', name: 'RPL 4' },
+        classId: 'class-xi-rpl-4',
+      }),
+      activeStudent({
+        nis: '0003',
+        name: 'Kelewat',
+        class: { grade: 'X', name: 'RPL 3' },
+        classId: 'class-x-rpl-3',
+      }),
     ];
 
     const result = computeSyncDiff(rows, existing);

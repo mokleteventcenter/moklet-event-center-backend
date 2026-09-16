@@ -1,7 +1,11 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ConfigService } from '@nestjs/config';
-import { Strategy, StrategyOptions, VerifyCallback } from 'passport-google-oauth20';
+import {
+  Strategy,
+  StrategyOptions,
+  VerifyCallback,
+} from 'passport-google-oauth20';
 
 export interface GoogleProfilePayload {
   email: string;
@@ -35,7 +39,10 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
     const hd: string | undefined = profile?._json?.hd;
 
     if (!email) {
-      return done(new UnauthorizedException('Email tidak ditemukan dari Google'), false);
+      return done(
+        new UnauthorizedException('Email tidak ditemukan dari Google'),
+        false,
+      );
     }
 
     const domainFromHd = hd;

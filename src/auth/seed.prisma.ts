@@ -18,17 +18,26 @@ async function main() {
   const password = process.env.SEED_ADMIN_PASSWORD ?? 'admin123';
 
   const existingAdmin = await prisma.account.findUnique({ where: { email } });
-  
+
   const hashedPassword = await hashingService.hash(password);
-  
+
   if (existingAdmin) {
-    console.log(`[Admin] Akun admin dengan email ${email} sudah ada, skip seed.`);
+    console.log(
+      `[Admin] Akun admin dengan email ${email} sudah ada, skip seed.`,
+    );
   } else {
     const admin = await prisma.account.create({
-      data: { email, passwordHash: hashedPassword, role: 'ADMIN_KESISWAAN', isVerified: true },
+      data: {
+        email,
+        passwordHash: hashedPassword,
+        role: 'ADMIN_KESISWAAN',
+        isVerified: true,
+      },
     });
     console.log('[Admin] Akun ADMIN_KESISWAAN berhasil dibuat:', admin.email);
-    console.log('[Admin] Login pertama kali lewat POST /auth/otp/request dengan email ini.');
+    console.log(
+      '[Admin] Login pertama kali lewat POST /auth/otp/request dengan email ini.',
+    );
   }
 
   // ========================================================
@@ -43,8 +52,8 @@ async function main() {
     );
   } else {
     const setting = await prisma.systemSetting.create({
-      data: { 
-        currentTopAngkatan: 33, 
+      data: {
+        currentTopAngkatan: 33,
         currentAcademicYear: '2026/2027',
       },
     });

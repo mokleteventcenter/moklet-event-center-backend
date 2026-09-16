@@ -9,7 +9,12 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+} from '@nestjs/swagger';
 import { ClassesService } from './classes.service';
 import { CreateClassDto } from './dto/create-class.dto';
 import { UpdateClassDto } from './dto/update-class.dto';
@@ -18,12 +23,15 @@ import { PaginationDto } from '../common/dto/pagination.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
-import { Paginated, MessageResponse } from '../common/interceptors/transform.interceptor';
+import {
+  Paginated,
+  MessageResponse,
+} from '../common/interceptors/transform.interceptor';
 
 @ApiTags('Master Data - Kelas')
 @Controller('classes')
 export class ClassesController {
-  constructor(private readonly classesService: ClassesService) { }
+  constructor(private readonly classesService: ClassesService) {}
 
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -31,7 +39,10 @@ export class ClassesController {
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: '[ADMIN_KESISWAAN] Buat kelas baru secara manual' })
   @ApiResponse({ status: 201, description: 'Kelas berhasil dibuat' })
-  @ApiResponse({ status: 400, description: 'Input tidak valid / kelas sudah ada' })
+  @ApiResponse({
+    status: 400,
+    description: 'Input tidak valid / kelas sudah ada',
+  })
   async create(@Body() dto: CreateClassDto) {
     const created = await this.classesService.create(dto);
     return new MessageResponse(created, 'Kelas berhasil dibuat');
@@ -41,7 +52,9 @@ export class ClassesController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN_KESISWAAN')
   @ApiBearerAuth('access-token')
-  @ApiOperation({ summary: '[ADMIN_KESISWAAN] Buat banyak kelas sekaligus (Bulk Create)' })
+  @ApiOperation({
+    summary: '[ADMIN_KESISWAAN] Buat banyak kelas sekaligus (Bulk Create)',
+  })
   @ApiResponse({ status: 201, description: 'Proses bulk create selesai' })
   async bulkCreate(@Body() dto: BulkCreateClassDto) {
     const result = await this.classesService.bulkCreate(dto.classes);
@@ -73,7 +86,9 @@ export class ClassesController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN_KESISWAAN')
   @ApiBearerAuth('access-token')
-  @ApiOperation({ summary: '[ADMIN_KESISWAAN] Perbarui data kelas berdasarkan ID' })
+  @ApiOperation({
+    summary: '[ADMIN_KESISWAAN] Perbarui data kelas berdasarkan ID',
+  })
   @ApiResponse({ status: 200, description: 'Kelas berhasil diperbarui' })
   @ApiResponse({ status: 404, description: 'Kelas tidak ditemukan' })
   async update(@Param('id') id: string, @Body() dto: UpdateClassDto) {
@@ -85,7 +100,9 @@ export class ClassesController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN_KESISWAAN')
   @ApiBearerAuth('access-token')
-  @ApiOperation({ summary: '[ADMIN_KESISWAAN] Hapus data kelas berdasarkan ID' })
+  @ApiOperation({
+    summary: '[ADMIN_KESISWAAN] Hapus data kelas berdasarkan ID',
+  })
   @ApiResponse({ status: 200, description: 'Kelas berhasil dihapus' })
   @ApiResponse({ status: 404, description: 'Kelas tidak ditemukan' })
   async remove(@Param('id') id: string) {

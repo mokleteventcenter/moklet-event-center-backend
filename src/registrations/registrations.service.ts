@@ -1,7 +1,14 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { assertStudentEligible } from '../common/helpers/assert-student-eligible';
-import { resolveGroupKey, checkAndConfirmQuota } from '../common/helpers/quota.helper';
+import {
+  resolveGroupKey,
+  checkAndConfirmQuota,
+} from '../common/helpers/quota.helper';
 import { IndividualRegistrationDto } from './dto/individual-registration.dto';
 import { randomInt } from 'node:crypto';
 
@@ -21,10 +28,16 @@ export class RegistrationsService {
    * Anti-daftar-ganda tetap dijaga lewat @@unique([studentId, categoryId]).
    */
   async registerIndividual(studentId: string, dto: IndividualRegistrationDto) {
-    const category = await this.prisma.category.findUnique({ where: { id: dto.categoryId } });
+    const category = await this.prisma.category.findUnique({
+      where: { id: dto.categoryId },
+    });
     if (!category) throw new NotFoundException('Cabang lomba tidak ditemukan');
 
-    const student = await assertStudentEligible(this.prisma, studentId, category.excludeGrade12);
+    const student = await assertStudentEligible(
+      this.prisma,
+      studentId,
+      category.excludeGrade12,
+    );
 
     if (category.maxMember > 1) {
       throw new BadRequestException(
@@ -65,10 +78,25 @@ export class RegistrationsService {
   }
 
   async findMyRegistrations(studentId: string) {
-    return this.prisma.registration.findMany({
+    const registrations = await this.prisma.registration.findMany({
       where: { studentId },
       include: { category: { include: { event: true } }, team: true },
       orderBy: { createdAt: 'desc' },
     });
+
+    // Model Registration tidak punya kolom status -- status kepesertaan
+    // diturunkan dari status Team-nya (individu = "tim isi 1 orang"):
+    // - DISQUALIFIED -> panitia mendiskualifikasi tim ini
+    // - LOCKED       -> tim sudah dikunci/terkonfirmasi (individu selalu LOCKED)
+    // - sisanya      -> dianggap terdaftar aktif
+    return registrations.map((reg) => ({
+      ...reg,
+      status:
+        reg.team?.status === 'DISQUALIFIED'
+          ? 'DISQUALIFIED'
+          : reg.team?.status === 'LOCKED'
+            ? 'CONFIRMED'
+            : 'REGISTERED',
+    }));
   }
 }

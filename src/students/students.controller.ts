@@ -12,17 +12,18 @@ import {
   UploadedFile,
   UseGuards,
   UseInterceptors,
+  BadRequestException,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
-import { 
-  ApiBearerAuth, 
-  ApiConsumes, 
-  ApiTags, 
-  ApiOperation, 
-  ApiResponse, 
+import {
+  ApiBearerAuth,
+  ApiConsumes,
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
   ApiOkResponse,
-  ApiBody 
+  ApiBody,
 } from '@nestjs/swagger';
 import { StudentsService } from './students.service';
 import { StudentsExcelService } from './students-excel.service';
@@ -35,7 +36,11 @@ import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
-import { Paginated, MessageResponse, RawResponse } from '../common/interceptors/transform.interceptor';
+import {
+  Paginated,
+  MessageResponse,
+  RawResponse,
+} from '../common/interceptors/transform.interceptor';
 import type { JwtPayload } from '../auth/interfaces/jwt-payload.interface';
 import { FilePipe } from 'src/upload/pipes/file.pipe';
 
@@ -52,7 +57,9 @@ export class StudentsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN_KESISWAAN')
   @ApiBearerAuth('access-token')
-  @ApiOperation({ summary: '[ADMIN_KESISWAAN] Tambah siswa baru secara manual' })
+  @ApiOperation({
+    summary: '[ADMIN_KESISWAAN] Tambah siswa baru secara manual',
+  })
   @ApiResponse({ status: 201, description: 'Siswa berhasil ditambahkan' })
   async create(@Body() dto: CreateStudentDto) {
     const created = await this.studentsService.create(dto);
@@ -75,7 +82,10 @@ export class StudentsController {
   @Get('bind-candidates')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth('access-token')
-  @ApiOperation({ summary: 'Mendapatkan kandidat akun siswa yang bisa ditautkan berdasarkan email saat ini' })
+  @ApiOperation({
+    summary:
+      'Mendapatkan kandidat akun siswa yang bisa ditautkan berdasarkan email saat ini',
+  })
   async bindCandidates(@CurrentUser() user: JwtPayload) {
     const candidates = await this.studentsService.getBindCandidates(user.email);
     return new RawResponse(candidates);
@@ -85,10 +95,19 @@ export class StudentsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN_KESISWAAN')
   @ApiBearerAuth('access-token')
-  @Header('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+  @Header(
+    'Content-Type',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  )
   @Header('Content-Disposition', 'attachment; filename="promosi-kelas.xlsx"')
-  @ApiOperation({ summary: '[ADMIN_KESISWAAN] Export template Excel untuk promosi kelas massal' })
-  @ApiOkResponse({ description: 'File Excel (.xlsx) berhasil di-generate', type: StreamableFile })
+  @ApiOperation({
+    summary:
+      '[ADMIN_KESISWAAN] Export template Excel untuk promosi kelas massal',
+  })
+  @ApiOkResponse({
+    description: 'File Excel (.xlsx) berhasil di-generate',
+    type: StreamableFile,
+  })
   async exportForPromotion(): Promise<StreamableFile> {
     const buffer = await this.studentsExcelService.exportForPromotion();
     return new StreamableFile(buffer);
@@ -100,12 +119,18 @@ export class StudentsController {
   @ApiBearerAuth('access-token')
   @ApiConsumes('multipart/form-data')
   @UseInterceptors(FileInterceptor('file', { storage: memoryStorage() }))
-  @ApiOperation({ summary: '[ADMIN_KESISWAAN] Import data siswa baru via Excel (Create Only)' })
+  @ApiOperation({
+    summary: '[ADMIN_KESISWAAN] Import data siswa baru via Excel (Create Only)',
+  })
   @ApiBody({
     schema: {
       type: 'object',
       properties: {
-        file: { type: 'string', format: 'binary', description: 'File Excel (.xlsx/.xls) berisi data siswa baru' },
+        file: {
+          type: 'string',
+          format: 'binary',
+          description: 'File Excel (.xlsx/.xls) berisi data siswa baru',
+        },
       },
     },
   })
@@ -121,7 +146,9 @@ export class StudentsController {
     )
     file: Express.Multer.File,
   ) {
-    const result = await this.studentsExcelService.importNewStudents(file.buffer);
+    const result = await this.studentsExcelService.importNewStudents(
+      file.buffer,
+    );
     return new MessageResponse(
       result,
       `${result.successCount} siswa berhasil ditambahkan, ${result.failedCount} baris gagal`,
@@ -134,12 +161,19 @@ export class StudentsController {
   @ApiBearerAuth('access-token')
   @ApiConsumes('multipart/form-data')
   @UseInterceptors(FileInterceptor('file', { storage: memoryStorage() }))
-  @ApiOperation({ summary: '[ADMIN_KESISWAAN] Import data promosi/kenaikan kelas massal via Excel' })
+  @ApiOperation({
+    summary:
+      '[ADMIN_KESISWAAN] Import data promosi/kenaikan kelas massal via Excel',
+  })
   @ApiBody({
     schema: {
       type: 'object',
       properties: {
-        file: { type: 'string', format: 'binary', description: 'File Excel promosi kelas hasil export yang sudah diisi' },
+        file: {
+          type: 'string',
+          format: 'binary',
+          description: 'File Excel promosi kelas hasil export yang sudah diisi',
+        },
       },
     },
   })
@@ -175,12 +209,19 @@ export class StudentsController {
   @ApiBearerAuth('access-token')
   @ApiConsumes('multipart/form-data')
   @UseInterceptors(FileInterceptor('file', { storage: memoryStorage() }))
-  @ApiOperation({ summary: '[ADMIN_KESISWAAN] Preview perbandingan file roster lengkap terhadap database sebelum eksekusi sync' })
+  @ApiOperation({
+    summary:
+      '[ADMIN_KESISWAAN] Preview perbandingan file roster lengkap terhadap database sebelum eksekusi sync',
+  })
   @ApiBody({
     schema: {
       type: 'object',
       properties: {
-        file: { type: 'string', format: 'binary', description: 'File Excel berisi roster lengkap seluruh siswa aktif' },
+        file: {
+          type: 'string',
+          format: 'binary',
+          description: 'File Excel berisi roster lengkap seluruh siswa aktif',
+        },
       },
     },
   })
@@ -213,12 +254,19 @@ export class StudentsController {
   @ApiBearerAuth('access-token')
   @ApiConsumes('multipart/form-data')
   @UseInterceptors(FileInterceptor('file', { storage: memoryStorage() }))
-  @ApiOperation({ summary: '[ADMIN_KESISWAAN] Eksekusi sinkronisasi roster sekolah (Create, Update, Graduate massal)' })
+  @ApiOperation({
+    summary:
+      '[ADMIN_KESISWAAN] Eksekusi sinkronisasi roster sekolah (Create, Update, Graduate massal)',
+  })
   @ApiBody({
     schema: {
       type: 'object',
       properties: {
-        file: { type: 'string', format: 'binary', description: 'File Excel roster lengkap yang telah divalidasi' },
+        file: {
+          type: 'string',
+          format: 'binary',
+          description: 'File Excel roster lengkap yang telah divalidasi',
+        },
       },
     },
   })
@@ -251,7 +299,11 @@ export class StudentsController {
     schema: {
       type: 'object',
       properties: {
-        file: { type: 'string', format: 'binary', description: 'File gambar avatar (max 3MB)' },
+        file: {
+          type: 'string',
+          format: 'binary',
+          description: 'File gambar avatar (max 3MB)',
+        },
       },
     },
   })
@@ -272,16 +324,33 @@ export class StudentsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN_KESISWAAN')
   @ApiBearerAuth('access-token')
-  @ApiOperation({ summary: '[ADMIN_KESISWAAN] Tautkan akun user (Account) ke data siswa secara manual oleh Admin' })
+  @ApiOperation({
+    summary:
+      '[ADMIN_KESISWAAN] Tautkan akun user (Account) ke data siswa secara manual oleh Admin',
+  })
   async bindManual(@Param('id') studentId: string, @Body() dto: BindManualDto) {
-    const updated = await this.authService.bindIdentity(dto.accountId, studentId);
-    return new MessageResponse(updated, 'Akun berhasil ditautkan manual ke data siswa');
+    // Terima accountId ATAU email (UI admin mengizinkan keduanya).
+    if (!dto.accountId && !dto.email) {
+      throw new BadRequestException(
+        'Sertakan accountId (UUID) atau email akun yang mau ditautkan',
+      );
+    }
+    const accountId =
+      dto.accountId ??
+      (await this.authService.findAccountIdByEmailOrThrow(dto.email!));
+    const updated = await this.authService.bindIdentity(accountId, studentId);
+    return new MessageResponse(
+      updated,
+      'Akun berhasil ditautkan manual ke data siswa',
+    );
   }
 
   @Get(':id')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth('access-token')
-  @ApiOperation({ summary: 'Mendapatkan detail profil satu siswa berdasarkan ID' })
+  @ApiOperation({
+    summary: 'Mendapatkan detail profil satu siswa berdasarkan ID',
+  })
   async findOne(@Param('id') id: string) {
     return this.studentsService.findOne(id);
   }
@@ -290,7 +359,9 @@ export class StudentsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN_KESISWAAN')
   @ApiBearerAuth('access-token')
-  @ApiOperation({ summary: '[ADMIN_KESISWAAN] Perbarui data identitas siswa berdasarkan ID' })
+  @ApiOperation({
+    summary: '[ADMIN_KESISWAAN] Perbarui data identitas siswa berdasarkan ID',
+  })
   async update(@Param('id') id: string, @Body() dto: UpdateStudentDto) {
     const updated = await this.studentsService.update(id, dto);
     return new MessageResponse(updated, 'Data siswa berhasil diperbarui');
@@ -300,7 +371,10 @@ export class StudentsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN_KESISWAAN')
   @ApiBearerAuth('access-token')
-  @ApiOperation({ summary: '[ADMIN_KESISWAAN] Nonaktifkan / Soft Delete data siswa berdasarkan ID' })
+  @ApiOperation({
+    summary:
+      '[ADMIN_KESISWAAN] Nonaktifkan / Soft Delete data siswa berdasarkan ID',
+  })
   async remove(@Param('id') id: string) {
     await this.studentsService.softDelete(id);
     return new MessageResponse(null, 'Siswa berhasil dinonaktifkan');

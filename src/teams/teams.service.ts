@@ -46,10 +46,16 @@ export class TeamsService {
    * - Kalau slot penuh → tolak (rollback seluruh transaction)
    */
   async create(studentId: string, dto: CreateTeamDto) {
-    const category = await this.prisma.category.findUnique({ where: { id: dto.categoryId } });
+    const category = await this.prisma.category.findUnique({
+      where: { id: dto.categoryId },
+    });
     if (!category) throw new NotFoundException('Cabang lomba tidak ditemukan');
-    
-    const student = await assertStudentEligible(this.prisma, studentId, category.excludeGrade12);
+
+    const student = await assertStudentEligible(
+      this.prisma,
+      studentId,
+      category.excludeGrade12,
+    );
 
     if (category.maxMember <= 1) {
       throw new BadRequestException(
@@ -106,13 +112,17 @@ export class TeamsService {
    * - Cek kuota saat anggota memenuhi minMember
    */
   async join(studentId: string, code: string) {
-    const teamLookup = await this.prisma.team.findUnique({ 
+    const teamLookup = await this.prisma.team.findUnique({
       where: { code },
-      include: { category: true }
+      include: { category: true },
     });
     if (!teamLookup) throw new NotFoundException('Kode tim tidak ditemukan');
-    
-    const student = await assertStudentEligible(this.prisma, studentId, teamLookup.category.excludeGrade12);
+
+    const student = await assertStudentEligible(
+      this.prisma,
+      studentId,
+      teamLookup.category.excludeGrade12,
+    );
 
     const teamId = teamLookup.id;
 
@@ -128,7 +138,9 @@ export class TeamsService {
       });
 
       if (team.status === 'LOCKED') {
-        throw new BadRequestException('Tim ini sudah dikunci oleh leader, tidak bisa join lagi');
+        throw new BadRequestException(
+          'Tim ini sudah dikunci oleh leader, tidak bisa join lagi',
+        );
       }
       if (team.status === 'FULL') {
         throw new BadRequestException('Tim ini sudah penuh');
@@ -145,8 +157,15 @@ export class TeamsService {
 
       // Validasi groupKey: di mode terbatas, anggota baru harus dari
       // kelas/angkatan yang sama dengan tim
-      const joinerGroupKey = resolveGroupKey(team.category.teamCompositionMode, student);
-      validateGroupKeyMatch(team.groupKey, joinerGroupKey, team.category.teamCompositionMode);
+      const joinerGroupKey = resolveGroupKey(
+        team.category.teamCompositionMode,
+        student,
+      );
+      validateGroupKeyMatch(
+        team.groupKey,
+        joinerGroupKey,
+        team.category.teamCompositionMode,
+      );
 
       await tx.teamMember.create({
         data: { teamId, studentId, isLeader: false },
@@ -164,7 +183,10 @@ export class TeamsService {
       await checkAndConfirmQuota(tx, teamId, team.category, newCount);
 
       if (newCount >= team.category.maxMember) {
-        await tx.team.update({ where: { id: teamId }, data: { status: 'FULL' } });
+        await tx.team.update({
+          where: { id: teamId },
+          data: { status: 'FULL' },
+        });
       }
 
       return tx.team.findUniqueOrThrow({
@@ -193,16 +215,23 @@ export class TeamsService {
       if (!team) throw new NotFoundException('Tim tidak ditemukan');
 
       if (team.status === 'LOCKED') {
-        throw new BadRequestException('Tim sudah dikunci, tidak bisa keluar tanpa intervensi panitia');
+        throw new BadRequestException(
+          'Tim sudah dikunci, tidak bisa keluar tanpa intervensi panitia',
+        );
       }
       if (team.status === 'DISQUALIFIED') {
         throw new BadRequestException('Tim sudah didiskualifikasi');
       }
 
-      const myMembership = team.teamMembers.find((m) => m.studentId === studentId);
-      if (!myMembership) throw new NotFoundException('Kamu bukan anggota tim ini');
+      const myMembership = team.teamMembers.find(
+        (m) => m.studentId === studentId,
+      );
+      if (!myMembership)
+        throw new NotFoundException('Kamu bukan anggota tim ini');
 
-      const remainingMembers = team.teamMembers.filter((m) => m.studentId !== studentId);
+      const remainingMembers = team.teamMembers.filter(
+        (m) => m.studentId !== studentId,
+      );
 
       if (myMembership.isLeader && remainingMembers.length > 0) {
         if (!dto.newLeaderStudentId) {
@@ -210,9 +239,13 @@ export class TeamsService {
             'Kamu leader tim ini -- tentukan pengganti (newLeaderStudentId) sebelum keluar',
           );
         }
-        const successor = remainingMembers.find((m) => m.studentId === dto.newLeaderStudentId);
+        const successor = remainingMembers.find(
+          (m) => m.studentId === dto.newLeaderStudentId,
+        );
         if (!successor) {
-          throw new BadRequestException('Calon leader baru harus anggota tim yang sama');
+          throw new BadRequestException(
+            'Calon leader baru harus anggota tim yang sama',
+          );
         }
         await tx.teamMember.update({
           where: { id: successor.id },
@@ -237,7 +270,10 @@ export class TeamsService {
 
       // FULL -> OPEN otomatis begitu ada yang keluar dari tim penuh.
       if (team.status === 'FULL') {
-        await tx.team.update({ where: { id: teamId }, data: { status: 'OPEN' } });
+        await tx.team.update({
+          where: { id: teamId },
+          data: { status: 'OPEN' },
+        });
       }
 
       return tx.team.findUniqueOrThrow({
@@ -254,7 +290,9 @@ export class TeamsService {
     });
     if (!team) throw new NotFoundException('Tim tidak ditemukan');
 
-    const myMembership = team.teamMembers.find((m) => m.studentId === studentId);
+    const myMembership = team.teamMembers.find(
+      (m) => m.studentId === studentId,
+    );
     if (!myMembership?.isLeader) {
       throw new ForbiddenException('Cuma leader yang bisa mengunci tim');
     }
@@ -267,7 +305,10 @@ export class TeamsService {
       );
     }
 
-    return this.prisma.team.update({ where: { id: teamId }, data: { status: 'LOCKED' } });
+    return this.prisma.team.update({
+      where: { id: teamId },
+      data: { status: 'LOCKED' },
+    });
   }
 
   /**
@@ -283,14 +324,21 @@ export class TeamsService {
 
     await this.ownership.assertCanManage(team.category.eventId, accountId);
 
-    return this.prisma.team.update({ where: { id: teamId }, data: { status: 'DISQUALIFIED' } });
+    return this.prisma.team.update({
+      where: { id: teamId },
+      data: { status: 'DISQUALIFIED' },
+    });
   }
 
   async findOne(teamId: string) {
     const team = await this.prisma.team.findUnique({
       where: { id: teamId },
       include: {
-        teamMembers: { include: { student: { select: { id: true, name: true, photoUrl: true } } } },
+        teamMembers: {
+          include: {
+            student: { select: { id: true, name: true, photoUrl: true } },
+          },
+        },
         category: true,
       },
     });

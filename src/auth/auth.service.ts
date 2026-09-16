@@ -171,7 +171,13 @@ export class AuthService {
         isActive: true,
         studentId: true,
         student: {
-          select: { id: true, name: true, photoUrl: true, class: true },
+          select: {
+            id: true,
+            name: true,
+            nis: true,
+            photoUrl: true,
+            class: true,
+          },
         },
       },
     });
@@ -181,6 +187,21 @@ export class AuthService {
     }
 
     return account;
+  }
+
+  /**
+   * Resolve Account.id dari email -- dipakai jalur bind manual via email
+   * (admin mengetik email akun, bukan UUID-nya).
+   */
+  async findAccountIdByEmailOrThrow(email: string): Promise<string> {
+    const account = await this.prisma.account.findUnique({
+      where: { email },
+      select: { id: true },
+    });
+    if (!account) {
+      throw new NotFoundException('Akun dengan email tersebut tidak ditemukan');
+    }
+    return account.id;
   }
 
   async createPanitia(email: string, password: string) {

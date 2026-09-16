@@ -28,7 +28,9 @@ export class SchedulesService {
   }
 
   private async findOneOrThrow(id: string) {
-    const schedule = await this.prisma.eventSchedule.findUnique({ where: { id } });
+    const schedule = await this.prisma.eventSchedule.findUnique({
+      where: { id },
+    });
     if (!schedule) throw new NotFoundException('Jadwal tidak ditemukan');
     return schedule;
   }
@@ -42,18 +44,32 @@ export class SchedulesService {
     });
   }
 
-  async updateDresscodeImage(id: string, accountId: string, file: Express.Multer.File) {
+  async updateDresscodeImage(
+    id: string,
+    accountId: string,
+    file: Express.Multer.File,
+  ) {
     const schedule = await this.findOneOrThrow(id);
     await this.ownership.assertCanManage(schedule.eventId, accountId);
 
     if (schedule.dresscodeImagePublicId) {
-      await this.uploadService.deleteFile(schedule.dresscodeImagePublicId, 'image');
+      await this.uploadService.deleteFile(
+        schedule.dresscodeImagePublicId,
+        'image',
+      );
     }
-    const result = await this.uploadService.uploadFile(file, 'dresscode-images', 'image');
+    const result = await this.uploadService.uploadFile(
+      file,
+      'dresscode-images',
+      'image',
+    );
 
     return this.prisma.eventSchedule.update({
       where: { id },
-      data: { dresscodeImageUrl: result.url, dresscodeImagePublicId: result.publicId },
+      data: {
+        dresscodeImageUrl: result.url,
+        dresscodeImagePublicId: result.publicId,
+      },
     });
   }
 

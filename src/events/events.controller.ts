@@ -27,13 +27,18 @@ import {
 import { EventsService } from './events.service';
 import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
-import { UpdateEventStatusDto } from './dto/update-event-status.dto';
-import { PaginationDto } from '../common/dto/pagination.dto';
+import {
+  FindAllEventsQueryDto,
+  UpdateEventStatusDto,
+} from './dto/update-event-status.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
-import { Paginated, MessageResponse } from '../common/interceptors/transform.interceptor';
+import {
+  Paginated,
+  MessageResponse,
+} from '../common/interceptors/transform.interceptor';
 import { FilePipe } from 'src/upload/pipes/file.pipe';
 
 @ApiTags('Events')
@@ -57,17 +62,21 @@ export class EventsController {
   @Get()
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth('access-token')
-  @ApiOperation({ summary: 'Mendapatkan daftar seluruh event (dengan paginasi)' })
+  @ApiOperation({
+    summary: 'Mendapatkan daftar seluruh event (dengan paginasi)',
+  })
   @ApiOkResponse({ description: 'Daftar event berhasil diambil' })
-  async findAll(@Query() pagination: PaginationDto) {
-    const result = await this.eventsService.findAll(pagination);
+  async findAll(@Query() query: FindAllEventsQueryDto) {
+    const result = await this.eventsService.findAll(query, query.status);
     return new Paginated(result.data, result.meta);
   }
 
   @Get('managed/me')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth('access-token')
-  @ApiOperation({ summary: 'Mendapatkan event yang dibuat atau dikelola akun saat ini' })
+  @ApiOperation({
+    summary: 'Mendapatkan event yang dibuat atau dikelola akun saat ini',
+  })
   async findManaged(@CurrentUser() user: JwtPayload) {
     return this.eventsService.findManaged(user.sub, user.studentId);
   }
@@ -85,13 +94,16 @@ export class EventsController {
 
   @Patch(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('PANITIA')
+  @Roles('PANITIA', 'SISWA')
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: '[PANITIA] Perbarui informasi detail event' })
   @ApiParam({ name: 'id', description: 'ID unik event' })
   @ApiOkResponse({ description: 'Event berhasil diperbarui' })
   @ApiResponse({ status: 400, description: 'Input data tidak valid' })
-  @ApiResponse({ status: 403, description: 'Akses ditolak (Bukan panitia pengelola event ini)' })
+  @ApiResponse({
+    status: 403,
+    description: 'Akses ditolak (Bukan panitia pengelola event ini)',
+  })
   @ApiResponse({ status: 404, description: 'Event tidak ditemukan' })
   async update(
     @Param('id') id: string,
@@ -104,13 +116,16 @@ export class EventsController {
 
   @Patch(':id/status')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('PANITIA')
+  @Roles('PANITIA', 'SISWA')
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: '[PANITIA] Perbarui status alur/publikasi event' })
   @ApiParam({ name: 'id', description: 'ID unik event' })
   @ApiOkResponse({ description: 'Status event berhasil diperbarui' })
   @ApiResponse({ status: 400, description: 'Status baru tidak valid' })
-  @ApiResponse({ status: 403, description: 'Akses ditolak (Bukan panitia pengelola event ini)' })
+  @ApiResponse({
+    status: 403,
+    description: 'Akses ditolak (Bukan panitia pengelola event ini)',
+  })
   @ApiResponse({ status: 404, description: 'Event tidak ditemukan' })
   async updateStatus(
     @Param('id') id: string,
@@ -123,7 +138,7 @@ export class EventsController {
 
   @Patch(':id/banner')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('PANITIA')
+  @Roles('PANITIA', 'SISWA')
   @ApiBearerAuth('access-token')
   @ApiConsumes('multipart/form-data')
   @ApiOperation({ summary: '[PANITIA] Upload atau perbarui banner event' })
@@ -141,8 +156,14 @@ export class EventsController {
     },
   })
   @ApiOkResponse({ description: 'Banner event berhasil diperbarui' })
-  @ApiResponse({ status: 400, description: 'File tidak valid atau melebihi batas ukuran 3MB' })
-  @ApiResponse({ status: 403, description: 'Akses ditolak (Bukan panitia pengelola event ini)' })
+  @ApiResponse({
+    status: 400,
+    description: 'File tidak valid atau melebihi batas ukuran 3MB',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Akses ditolak (Bukan panitia pengelola event ini)',
+  })
   @ApiResponse({ status: 404, description: 'Event tidak ditemukan' })
   @UseInterceptors(FileInterceptor('file', { storage: memoryStorage() }))
   async updateBanner(
@@ -156,10 +177,13 @@ export class EventsController {
 
   @Patch(':id/guidebook')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('PANITIA')
+  @Roles('PANITIA', 'SISWA')
   @ApiBearerAuth('access-token')
   @ApiConsumes('multipart/form-data')
-  @ApiOperation({ summary: '[PANITIA] Upload atau perbarui berkas buku panduan (guidebook) event' })
+  @ApiOperation({
+    summary:
+      '[PANITIA] Upload atau perbarui berkas buku panduan (guidebook) event',
+  })
   @ApiParam({ name: 'id', description: 'ID unik event' })
   @ApiBody({
     schema: {
@@ -168,23 +192,36 @@ export class EventsController {
         file: {
           type: 'string',
           format: 'binary',
-          description: 'File dokumen Guidebook dalam format PDF (Maksimal 10MB)',
+          description:
+            'File dokumen Guidebook dalam format PDF (Maksimal 10MB)',
         },
       },
     },
   })
   @ApiOkResponse({ description: 'Guidebook event berhasil diperbarui' })
-  @ApiResponse({ status: 400, description: 'Format file bukan PDF atau melebihi batas ukuran 10MB' })
-  @ApiResponse({ status: 403, description: 'Akses ditolak (Bukan panitia pengelola event ini)' })
+  @ApiResponse({
+    status: 400,
+    description: 'Format file bukan PDF atau melebihi batas ukuran 10MB',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Akses ditolak (Bukan panitia pengelola event ini)',
+  })
   @ApiResponse({ status: 404, description: 'Event tidak ditemukan' })
   @UseInterceptors(FileInterceptor('file', { storage: memoryStorage() }))
   async updateGuidebook(
     @Param('id') id: string,
     @CurrentUser() user: JwtPayload,
-    @UploadedFile(new FilePipe({ maxSizeMb: 10, allowedMimes: ['application/pdf'] }))
+    @UploadedFile(
+      new FilePipe({ maxSizeMb: 10, allowedMimes: ['application/pdf'] }),
+    )
     file: Express.Multer.File,
   ) {
-    const updated = await this.eventsService.updateGuidebook(id, user.sub, file);
+    const updated = await this.eventsService.updateGuidebook(
+      id,
+      user.sub,
+      file,
+    );
     return new MessageResponse(updated, 'Guidebook event berhasil diperbarui');
   }
 }

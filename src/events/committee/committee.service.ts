@@ -1,4 +1,8 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { EventOwnershipService } from '../event-ownership.service';
 
@@ -18,7 +22,9 @@ export class CommitteeService {
   async addMember(eventId: string, accountId: string, studentId: string) {
     await this.ownership.assertOwner(eventId, accountId);
 
-    const student = await this.prisma.student.findUnique({ where: { id: studentId } });
+    const student = await this.prisma.student.findUnique({
+      where: { id: studentId },
+    });
     if (!student || student.deletedAt) {
       throw new BadRequestException('Data siswa tidak ditemukan');
     }
@@ -27,7 +33,9 @@ export class CommitteeService {
       where: { eventId_studentId: { eventId, studentId } },
     });
     if (existing) {
-      throw new BadRequestException('Siswa ini sudah jadi anggota divisi event ini');
+      throw new BadRequestException(
+        'Siswa ini sudah jadi anggota divisi event ini',
+      );
     }
 
     return this.prisma.eventCommitteeMember.create({
@@ -41,7 +49,8 @@ export class CommitteeService {
     const existing = await this.prisma.eventCommitteeMember.findUnique({
       where: { eventId_studentId: { eventId, studentId } },
     });
-    if (!existing) throw new NotFoundException('Siswa ini bukan anggota divisi event ini');
+    if (!existing)
+      throw new NotFoundException('Siswa ini bukan anggota divisi event ini');
 
     await this.prisma.eventCommitteeMember.delete({
       where: { eventId_studentId: { eventId, studentId } },
@@ -56,7 +65,17 @@ export class CommitteeService {
     await this.ownership.assertOwnerOrCommitteeMember(eventId, accountId);
     return this.prisma.eventCommitteeMember.findMany({
       where: { eventId },
-      include: { student: { select: { id: true, name: true, photoUrl: true } } },
+      include: {
+        student: {
+          select: {
+            id: true,
+            name: true,
+            photoUrl: true,
+            nis: true,
+            class: true,
+          },
+        },
+      },
     });
   }
 }

@@ -69,7 +69,9 @@ export function computeSyncDiff(
   activeStudents: ActiveStudentForDiff[],
 ): Omit<SyncPreviewResult, 'rowErrors'> {
   const dbByNis = new Map(
-    activeStudents.filter((s) => s.nis !== null).map((s) => [s.nis as string, s]),
+    activeStudents
+      .filter((s) => s.nis !== null)
+      .map((s) => [s.nis as string, s]),
   );
   const fileNisSet = new Set(rows.map((r) => r.nis));
 
@@ -100,7 +102,12 @@ export function computeSyncDiff(
 
     const classLabel = `${s.class.grade} ${s.class.name}`;
     if (s.class.grade === 'XII') {
-      toGraduate.push({ nis: s.nis, name: s.name, toClass: 'LULUS', fromClass: classLabel });
+      toGraduate.push({
+        nis: s.nis,
+        name: s.name,
+        toClass: 'LULUS',
+        fromClass: classLabel,
+      });
     } else {
       warnings.push({
         studentId: s.id,
@@ -118,13 +125,14 @@ export function computeSyncDiff(
 
 @Injectable()
 export class StudentsExcelService {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService) {}
 
   private async loadWorksheet(buffer: Buffer): Promise<ExcelJS.Worksheet> {
     const workbook = new ExcelJS.Workbook();
     await workbook.xlsx.load(buffer as any);
     const sheet = workbook.worksheets[0];
-    if (!sheet) throw new BadRequestException('File Excel kosong / tidak valid');
+    if (!sheet)
+      throw new BadRequestException('File Excel kosong / tidak valid');
     return sheet;
   }
 
@@ -132,9 +140,10 @@ export class StudentsExcelService {
    * Parse file roster dan validasi tiap baris + resolve Class ID-nya.
    * Dipakai bersama oleh previewSync() dan executeSync().
    */
-  private async parseSyncRows(
-    buffer: Buffer,
-  ): Promise<{ rows: (SyncRow & { classId: string })[]; rowErrors: SyncRowError[] }> {
+  private async parseSyncRows(buffer: Buffer): Promise<{
+    rows: (SyncRow & { classId: string })[];
+    rowErrors: SyncRowError[];
+  }> {
     const sheet = await this.loadWorksheet(buffer);
     const rowErrors: SyncRowError[] = [];
     const rows: (SyncRow & { classId: string })[] = [];
@@ -144,7 +153,9 @@ export class StudentsExcelService {
       const row = sheet.getRow(rowNumber);
       const name = String(row.getCell(1).value ?? '').trim();
       const nis = String(row.getCell(2).value ?? '').trim();
-      const grade = String(row.getCell(3).value ?? '').trim().toUpperCase();
+      const grade = String(row.getCell(3).value ?? '')
+        .trim()
+        .toUpperCase();
       const className = String(row.getCell(4).value ?? '').trim();
 
       if (!name && !nis && !grade && !className) continue;
@@ -155,13 +166,19 @@ export class StudentsExcelService {
       }
 
       if (seenNis.has(nis)) {
-        rowErrors.push({ row: rowNumber, reason: `NIS "${nis}" duplikat DI DALAM file ini` });
+        rowErrors.push({
+          row: rowNumber,
+          reason: `NIS "${nis}" duplikat DI DALAM file ini`,
+        });
         continue;
       }
       seenNis.add(nis);
 
       if (!VALID_GRADES.includes(grade)) {
-        rowErrors.push({ row: rowNumber, reason: `Tingkat "${grade}" tidak valid` });
+        rowErrors.push({
+          row: rowNumber,
+          reason: `Tingkat "${grade}" tidak valid`,
+        });
         continue;
       }
 
@@ -176,7 +193,14 @@ export class StudentsExcelService {
         continue;
       }
 
-      rows.push({ row: rowNumber, name, nis, grade, className, classId: kelas.id });
+      rows.push({
+        row: rowNumber,
+        name,
+        nis,
+        grade,
+        className,
+        classId: kelas.id,
+      });
     }
 
     return { rows, rowErrors };
@@ -227,7 +251,9 @@ export class StudentsExcelService {
 
       const setting = await tx.systemSetting.findFirst();
       if (setting) {
-        const [startYear, endYear] = setting.currentAcademicYear.split('/').map(Number);
+        const [startYear, endYear] = setting.currentAcademicYear
+          .split('/')
+          .map(Number);
         await tx.systemSetting.update({
           where: { id: setting.id },
           data: {
@@ -253,7 +279,9 @@ export class StudentsExcelService {
       const row = sheet.getRow(rowNumber);
       const name = String(row.getCell(1).value ?? '').trim();
       const nis = String(row.getCell(2).value ?? '').trim();
-      const grade = String(row.getCell(3).value ?? '').trim().toUpperCase();
+      const grade = String(row.getCell(3).value ?? '')
+        .trim()
+        .toUpperCase();
       const className = String(row.getCell(4).value ?? '').trim();
 
       if (!name && !nis && !grade && !className) continue;
@@ -264,7 +292,10 @@ export class StudentsExcelService {
       }
 
       if (!VALID_GRADES.includes(grade)) {
-        errors.push({ row: rowNumber, reason: `Tingkat "${grade}" tidak valid (harus X/XI/XII)` });
+        errors.push({
+          row: rowNumber,
+          reason: `Tingkat "${grade}" tidak valid (harus X/XI/XII)`,
+        });
         continue;
       }
 
@@ -279,7 +310,9 @@ export class StudentsExcelService {
         continue;
       }
 
-      const existingNis = await this.prisma.student.findUnique({ where: { nis } });
+      const existingNis = await this.prisma.student.findUnique({
+        where: { nis },
+      });
       if (existingNis) {
         errors.push({ row: rowNumber, reason: `NIS "${nis}" sudah terdaftar` });
         continue;
@@ -323,7 +356,7 @@ export class StudentsExcelService {
     }
 
     const bufferResult = await workbook.xlsx.writeBuffer();
-    return Buffer.from(bufferResult as ArrayBuffer);
+    return Buffer.from(bufferResult);
   }
 
   /**
@@ -353,12 +386,19 @@ export class StudentsExcelService {
 
       const student = await this.prisma.student.findUnique({ where: { nis } });
       if (!student || student.deletedAt) {
-        errors.push({ row: rowNumber, reason: `NIS "${nis}" tidak ditemukan / sudah tidak aktif` });
+        errors.push({
+          row: rowNumber,
+          reason: `NIS "${nis}" tidak ditemukan / sudah tidak aktif`,
+        });
         continue;
       }
 
       if (newClassRaw.toUpperCase() === 'LULUS') {
-        plannedActions.push({ row: rowNumber, studentId: student.id, action: 'graduate' });
+        plannedActions.push({
+          row: rowNumber,
+          studentId: student.id,
+          action: 'graduate',
+        });
         continue;
       }
 
@@ -373,7 +413,9 @@ export class StudentsExcelService {
       }
 
       const targetClass = await this.prisma.class.findUnique({
-        where: { grade_name: { grade: grade.toUpperCase() as any, name: className } },
+        where: {
+          grade_name: { grade: grade.toUpperCase() as any, name: className },
+        },
       });
       if (!targetClass) {
         errors.push({
@@ -409,7 +451,9 @@ export class StudentsExcelService {
 
       const setting = await tx.systemSetting.findFirst();
       if (setting) {
-        const [startYear, endYear] = setting.currentAcademicYear.split('/').map(Number);
+        const [startYear, endYear] = setting.currentAcademicYear
+          .split('/')
+          .map(Number);
         await tx.systemSetting.update({
           where: { id: setting.id },
           data: {
@@ -420,6 +464,10 @@ export class StudentsExcelService {
       }
     });
 
-    return { successCount: plannedActions.length, failedCount: errors.length, errors };
+    return {
+      successCount: plannedActions.length,
+      failedCount: errors.length,
+      errors,
+    };
   }
 }

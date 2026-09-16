@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { UploadService } from '../upload/upload.service';
 import { CreateStudentDto } from './dto/create-student.dto';
@@ -77,10 +81,17 @@ export class StudentsService {
     }
 
     if (account.student.photoPublicId) {
-      await this.uploadService.deleteFile(account.student.photoPublicId, 'image');
+      await this.uploadService.deleteFile(
+        account.student.photoPublicId,
+        'image',
+      );
     }
 
-    const result = await this.uploadService.uploadFile(file, 'avatars', 'image');
+    const result = await this.uploadService.uploadFile(
+      file,
+      'avatars',
+      'image',
+    );
 
     return this.prisma.student.update({
       where: { id: account.student.id },
@@ -144,6 +155,8 @@ export class StudentsService {
       });
     }
 
-    return results.sort((a, b) => Number(b.isSuggested) - Number(a.isSuggested));
+    return results.sort(
+      (a, b) => Number(b.isSuggested) - Number(a.isSuggested),
+    );
   }
 }

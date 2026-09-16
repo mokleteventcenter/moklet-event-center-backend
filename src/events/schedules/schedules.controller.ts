@@ -31,7 +31,10 @@ import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
-import { RawResponse, MessageResponse } from '../../common/interceptors/transform.interceptor';
+import {
+  RawResponse,
+  MessageResponse,
+} from '../../common/interceptors/transform.interceptor';
 import { FilePipe } from 'src/upload/pipes/file.pipe';
 
 @ApiTags('Event Schedules (Dresscode)')
@@ -41,13 +44,19 @@ export class SchedulesController {
 
   @Post('events/:eventId/schedules')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('PANITIA')
+  @Roles('PANITIA', 'SISWA')
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: '[PANITIA] Tambah jadwal pelaksanaan event baru' })
-  @ApiParam({ name: 'eventId', description: 'ID unik event yang akan ditambahkan jadwalnya' })
+  @ApiParam({
+    name: 'eventId',
+    description: 'ID unik event yang akan ditambahkan jadwalnya',
+  })
   @ApiCreatedResponse({ description: 'Jadwal berhasil ditambahkan' })
   @ApiResponse({ status: 400, description: 'Input data tidak valid' })
-  @ApiResponse({ status: 403, description: 'Akses ditolak (Hanya panitia pengelola event ini)' })
+  @ApiResponse({
+    status: 403,
+    description: 'Akses ditolak (Hanya panitia pengelola event ini)',
+  })
   @ApiResponse({ status: 404, description: 'Event tidak ditemukan' })
   async create(
     @Param('eventId') eventId: string,
@@ -61,7 +70,9 @@ export class SchedulesController {
   @Get('events/:eventId/schedules')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth('access-token')
-  @ApiOperation({ summary: 'Mendapatkan seluruh jadwal pelaksanaan suatu event' })
+  @ApiOperation({
+    summary: 'Mendapatkan seluruh jadwal pelaksanaan suatu event',
+  })
   @ApiParam({ name: 'eventId', description: 'ID unik event' })
   @ApiOkResponse({ description: 'Daftar jadwal berhasil diambil' })
   @ApiResponse({ status: 404, description: 'Event tidak ditemukan' })
@@ -72,13 +83,16 @@ export class SchedulesController {
 
   @Patch('schedules/:id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('PANITIA')
+  @Roles('PANITIA', 'SISWA')
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: '[PANITIA] Perbarui detail informasi jadwal event' })
   @ApiParam({ name: 'id', description: 'ID unik jadwal event' })
   @ApiOkResponse({ description: 'Jadwal berhasil diperbarui' })
   @ApiResponse({ status: 400, description: 'Input data tidak valid' })
-  @ApiResponse({ status: 403, description: 'Akses ditolak (Bukan panitia pengelola event ini)' })
+  @ApiResponse({
+    status: 403,
+    description: 'Akses ditolak (Bukan panitia pengelola event ini)',
+  })
   @ApiResponse({ status: 404, description: 'Jadwal tidak ditemukan' })
   async update(
     @Param('id') id: string,
@@ -91,10 +105,12 @@ export class SchedulesController {
 
   @Patch('schedules/:id/dresscode-image')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('PANITIA')
+  @Roles('PANITIA', 'SISWA')
   @ApiBearerAuth('access-token')
   @ApiConsumes('multipart/form-data')
-  @ApiOperation({ summary: '[PANITIA] Upload atau perbarui foto contoh dresscode jadwal' })
+  @ApiOperation({
+    summary: '[PANITIA] Upload atau perbarui foto contoh dresscode jadwal',
+  })
   @ApiParam({ name: 'id', description: 'ID unik jadwal event' })
   @ApiBody({
     schema: {
@@ -103,14 +119,21 @@ export class SchedulesController {
         file: {
           type: 'string',
           format: 'binary',
-          description: 'File gambar dresscode (Maksimal 3MB, Format PNG/JPG/JPEG)',
+          description:
+            'File gambar dresscode (Maksimal 3MB, Format PNG/JPG/JPEG)',
         },
       },
     },
   })
   @ApiOkResponse({ description: 'Gambar dresscode berhasil diperbarui' })
-  @ApiResponse({ status: 400, description: 'File tidak valid atau melebihi batas ukuran 3MB' })
-  @ApiResponse({ status: 403, description: 'Akses ditolak (Bukan panitia pengelola event ini)' })
+  @ApiResponse({
+    status: 400,
+    description: 'File tidak valid atau melebihi batas ukuran 3MB',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Akses ditolak (Bukan panitia pengelola event ini)',
+  })
   @ApiResponse({ status: 404, description: 'Jadwal tidak ditemukan' })
   @UseInterceptors(FileInterceptor('file', { storage: memoryStorage() }))
   async updateDresscodeImage(
@@ -118,18 +141,25 @@ export class SchedulesController {
     @CurrentUser() user: JwtPayload,
     @UploadedFile(new FilePipe({ maxSizeMb: 3 })) file: Express.Multer.File,
   ) {
-    const updated = await this.schedulesService.updateDresscodeImage(id, user.sub, file);
+    const updated = await this.schedulesService.updateDresscodeImage(
+      id,
+      user.sub,
+      file,
+    );
     return new MessageResponse(updated, 'Gambar dresscode berhasil diperbarui');
   }
 
   @Delete('schedules/:id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('PANITIA')
+  @Roles('PANITIA', 'SISWA')
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: '[PANITIA] Hapus jadwal dari event' })
   @ApiParam({ name: 'id', description: 'ID unik jadwal yang akan dihapus' })
   @ApiOkResponse({ description: 'Jadwal berhasil dihapus' })
-  @ApiResponse({ status: 403, description: 'Akses ditolak (Bukan panitia pengelola event ini)' })
+  @ApiResponse({
+    status: 403,
+    description: 'Akses ditolak (Bukan panitia pengelola event ini)',
+  })
   @ApiResponse({ status: 404, description: 'Jadwal tidak ditemukan' })
   async remove(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
     await this.schedulesService.remove(id, user.sub);

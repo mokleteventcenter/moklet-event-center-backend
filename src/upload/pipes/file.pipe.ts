@@ -1,7 +1,4 @@
-import {
-  BadRequestException,
-  PipeTransform,
-} from '@nestjs/common';
+import { BadRequestException, PipeTransform } from '@nestjs/common';
 
 interface FilePipeOptions {
   maxSizeMb?: number;
@@ -14,10 +11,8 @@ export class FilePipe implements PipeTransform {
   constructor(private options: FilePipeOptions = {}) {}
 
   transform(file: Express.Multer.File) {
-    const {
-      maxSizeMb = 5,
-      allowedMimes = DEFAULT_ALLOWED_MIMES,
-    } = this.options;
+    const { maxSizeMb = 5, allowedMimes = DEFAULT_ALLOWED_MIMES } =
+      this.options;
 
     if (!file) throw new BadRequestException('File is required');
 

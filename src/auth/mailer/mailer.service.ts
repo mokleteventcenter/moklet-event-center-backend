@@ -15,11 +15,7 @@ export class MailerService {
     this.isDev = this.config.get<string>('NODE_ENV') !== 'production';
   }
 
-  async sendOtp(
-    to: string,
-    code: string,
-    ttlMinutes: number,
-  ): Promise<void> {
+  async sendOtp(to: string, code: string, ttlMinutes: number): Promise<void> {
     const subject = 'Kode Verifikasi Moklet Event Hub';
     const text = `Kode OTP kamu: ${code} (berlaku ${ttlMinutes} menit). Jangan bagikan kode ini ke siapa pun.`;
 
@@ -37,7 +33,10 @@ export class MailerService {
       });
 
       if (response.error) {
-        this.logger.error(`Resend API Error: ${response.error.message}`, response.error);
+        this.logger.error(
+          `Resend API Error: ${response.error.message}`,
+          response.error,
+        );
         throw new Error(response.error.message);
       }
 

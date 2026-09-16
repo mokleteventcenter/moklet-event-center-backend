@@ -1,5 +1,12 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEnum, IsInt, IsOptional, IsString, Min, MinLength } from 'class-validator';
+import {
+  IsEnum,
+  IsInt,
+  IsOptional,
+  IsString,
+  Min,
+  MinLength,
+} from 'class-validator';
 import { TeamCompositionMode } from 'generated/prisma/client';
 
 export class CreateCategoryDto {
@@ -27,7 +34,8 @@ export class CreateCategoryDto {
   teamCompositionMode: TeamCompositionMode;
 
   @ApiPropertyOptional({
-    description: 'Maksimal tim per grup (kelas/angkatan). Wajib diisi jika mode BUKAN FREE.',
+    description:
+      'Maksimal tim per grup (kelas/angkatan). Wajib diisi jika mode BUKAN FREE.',
   })
   @IsOptional()
   @IsInt()
@@ -43,7 +51,8 @@ export class CreateCategoryDto {
   maxTotalTeams?: number;
 
   @ApiPropertyOptional({
-    description: 'Jika true, siswa kelas 12 tidak boleh mendaftar/bergabung di cabang lomba ini (default: true)',
+    description:
+      'Jika true, siswa kelas 12 tidak boleh mendaftar/bergabung di cabang lomba ini (default: true)',
     default: true,
   })
   @IsOptional()

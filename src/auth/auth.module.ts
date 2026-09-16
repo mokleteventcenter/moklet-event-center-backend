@@ -19,14 +19,22 @@ import { MailerService } from './mailer/mailer.service';
       useFactory: (config: ConfigService) => ({
         secret: config.get<string>('JWT_SECRET'),
         signOptions: {
-          expiresIn: config.get<string>('JWT_EXPIRES_IN') as `${number}${'s' | 'm' | 'h' | 'd'}`,
+          expiresIn: config.get<string>(
+            'JWT_EXPIRES_IN',
+          ) as `${number}${'s' | 'm' | 'h' | 'd'}`,
         },
       }),
     }),
-    MailerModule
+    MailerModule,
   ],
   controllers: [AuthController],
-  providers: [JwtStrategy, GoogleStrategy, AuthService, OtpService, MailerService],
+  providers: [
+    JwtStrategy,
+    GoogleStrategy,
+    AuthService,
+    OtpService,
+    MailerService,
+  ],
   exports: [JwtModule, PassportModule, AuthService],
 })
 export class AuthModule {}

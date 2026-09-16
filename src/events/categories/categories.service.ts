@@ -1,4 +1,8 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { EventOwnershipService } from '../event-ownership.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
@@ -13,7 +17,9 @@ export class CategoriesService {
 
   private assertMinMax(minMember: number, maxMember: number) {
     if (minMember > maxMember) {
-      throw new BadRequestException('minMember tidak boleh lebih besar dari maxMember');
+      throw new BadRequestException(
+        'minMember tidak boleh lebih besar dari maxMember',
+      );
     }
   }
 
@@ -24,14 +30,20 @@ export class CategoriesService {
   ) {
     if (mode === 'FREE') {
       if (maxTeamsPerGroup != null) {
-        throw new BadRequestException('Mode FREE tidak boleh mengisi maxTeamsPerGroup');
+        throw new BadRequestException(
+          'Mode FREE tidak boleh mengisi maxTeamsPerGroup',
+        );
       }
     } else {
       if (maxTeamsPerGroup == null) {
-        throw new BadRequestException(`maxTeamsPerGroup wajib diisi untuk mode ${mode}`);
+        throw new BadRequestException(
+          `maxTeamsPerGroup wajib diisi untuk mode ${mode}`,
+        );
       }
       if (maxTotalTeams != null) {
-        throw new BadRequestException(`Mode ${mode} tidak boleh mengisi maxTotalTeams (harus pakai FREE)`);
+        throw new BadRequestException(
+          `Mode ${mode} tidak boleh mengisi maxTotalTeams (harus pakai FREE)`,
+        );
       }
     }
   }
@@ -39,7 +51,11 @@ export class CategoriesService {
   async create(eventId: string, accountId: string, dto: CreateCategoryDto) {
     await this.ownership.assertCanManage(eventId, accountId);
     this.assertMinMax(dto.minMember, dto.maxMember);
-    this.validateCompositionMode(dto.teamCompositionMode, dto.maxTeamsPerGroup, dto.maxTotalTeams);
+    this.validateCompositionMode(
+      dto.teamCompositionMode,
+      dto.maxTeamsPerGroup,
+      dto.maxTotalTeams,
+    );
     return this.prisma.category.create({ data: { ...dto, eventId } });
   }
 
@@ -52,7 +68,8 @@ export class CategoriesService {
 
   private async findOneOrThrow(id: string) {
     const category = await this.prisma.category.findUnique({ where: { id } });
-    if (!category) throw new NotFoundException('Kategori/cabang lomba tidak ditemukan');
+    if (!category)
+      throw new NotFoundException('Kategori/cabang lomba tidak ditemukan');
     return category;
   }
 
@@ -75,9 +92,15 @@ export class CategoriesService {
     this.assertMinMax(minMember, maxMember);
 
     const mode = dto.teamCompositionMode ?? category.teamCompositionMode;
-    const maxPerGroup = dto.maxTeamsPerGroup !== undefined ? dto.maxTeamsPerGroup : category.maxTeamsPerGroup;
-    const maxTotal = dto.maxTotalTeams !== undefined ? dto.maxTotalTeams : category.maxTotalTeams;
-    
+    const maxPerGroup =
+      dto.maxTeamsPerGroup !== undefined
+        ? dto.maxTeamsPerGroup
+        : category.maxTeamsPerGroup;
+    const maxTotal =
+      dto.maxTotalTeams !== undefined
+        ? dto.maxTotalTeams
+        : category.maxTotalTeams;
+
     this.validateCompositionMode(mode, maxPerGroup, maxTotal);
 
     const updateData = {

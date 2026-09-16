@@ -1,4 +1,8 @@
-import { Injectable, ForbiddenException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { EventOwnershipService } from '../events/event-ownership.service';
 import { CreateAnnouncementDto } from './dto/create-announcement.dto';
@@ -18,7 +22,9 @@ export class AnnouncementsService {
       await this.ownership.assertCanManage(dto.eventId, accountId);
     } else {
       if (!['PANITIA', 'ADMIN_KESISWAAN'].includes(role)) {
-        throw new ForbiddenException('Hanya PANITIA atau ADMIN_KESISWAAN yang bisa membuat pengumuman global');
+        throw new ForbiddenException(
+          'Hanya PANITIA atau ADMIN_KESISWAAN yang bisa membuat pengumuman global',
+        );
       }
     }
 
@@ -31,7 +37,13 @@ export class AnnouncementsService {
       },
       include: {
         event: { select: { id: true, name: true } },
-        createdBy: { select: { id: true, email: true } },
+        createdBy: {
+          select: {
+            id: true,
+            email: true,
+            student: { select: { name: true } },
+          },
+        },
       },
     });
   }
@@ -48,7 +60,13 @@ export class AnnouncementsService {
         orderBy: { createdAt: 'desc' },
         include: {
           event: { select: { id: true, name: true } },
-          createdBy: { select: { id: true, email: true } },
+          createdBy: {
+            select: {
+              id: true,
+              email: true,
+              student: { select: { name: true } },
+            },
+          },
         },
       }),
       this.prisma.announcement.count({ where }),
@@ -62,10 +80,17 @@ export class AnnouncementsService {
       where: { id },
       include: {
         event: { select: { id: true, name: true } },
-        createdBy: { select: { id: true, email: true } },
+        createdBy: {
+          select: {
+            id: true,
+            email: true,
+            student: { select: { name: true } },
+          },
+        },
       },
     });
-    if (!announcement) throw new NotFoundException('Pengumuman tidak ditemukan');
+    if (!announcement)
+      throw new NotFoundException('Pengumuman tidak ditemukan');
     return announcement;
   }
 
@@ -83,7 +108,13 @@ export class AnnouncementsService {
       data: dto,
       include: {
         event: { select: { id: true, name: true } },
-        createdBy: { select: { id: true, email: true } },
+        createdBy: {
+          select: {
+            id: true,
+            email: true,
+            student: { select: { name: true } },
+          },
+        },
       },
     });
   }

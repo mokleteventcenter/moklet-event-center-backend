@@ -1,8 +1,18 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsUUID } from 'class-validator';
+import { ApiPropertyOptional } from '@nestjs/swagger';
+import { IsEmail, IsOptional, IsUUID } from 'class-validator';
 
 export class BindManualDto {
-  @ApiProperty({ description: 'Account.id siswa yang mau di-bind manual oleh admin' })
+  @ApiPropertyOptional({
+    description: 'Account.id siswa yang mau di-bind manual oleh admin',
+  })
+  @IsOptional()
   @IsUUID()
-  accountId: string;
+  accountId?: string;
+
+  @ApiPropertyOptional({
+    description: 'Email akun siswa (alternatif dari accountId)',
+  })
+  @IsOptional()
+  @IsEmail()
+  email?: string;
 }

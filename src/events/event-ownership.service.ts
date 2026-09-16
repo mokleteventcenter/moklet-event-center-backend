@@ -1,4 +1,8 @@
-import { Injectable, ForbiddenException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -13,7 +17,9 @@ export class EventOwnershipService {
    * - Transfer ownership
    */
   async assertOwner(eventId: string, accountId: string) {
-    const event = await this.prisma.event.findUnique({ where: { id: eventId } });
+    const event = await this.prisma.event.findUnique({
+      where: { id: eventId },
+    });
     if (!event) throw new NotFoundException('Event tidak ditemukan');
     if (event.createdById !== accountId) {
       throw new ForbiddenException('Kamu bukan penanggung jawab event ini');
@@ -49,7 +55,9 @@ export class EventOwnershipService {
       (m) => m.student.account?.id === accountId,
     );
     if (!isCommitteeMember) {
-      throw new ForbiddenException('Kamu tidak punya akses untuk mengelola event ini');
+      throw new ForbiddenException(
+        'Kamu tidak punya akses untuk mengelola event ini',
+      );
     }
     return event;
   }

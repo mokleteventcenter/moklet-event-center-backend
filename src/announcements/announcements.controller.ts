@@ -27,7 +27,10 @@ import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
-import { Paginated, MessageResponse } from '../common/interceptors/transform.interceptor';
+import {
+  Paginated,
+  MessageResponse,
+} from '../common/interceptors/transform.interceptor';
 import type { JwtPayload } from '../auth/interfaces/jwt-payload.interface';
 
 @ApiTags('Announcements (Pengumuman)')
@@ -40,7 +43,8 @@ export class AnnouncementsController {
   @Roles('SISWA', 'PANITIA', 'ADMIN_KESISWAAN')
   @ApiBearerAuth('access-token')
   @ApiOperation({
-    summary: '[SISWA/PANITIA/ADMIN_KESISWAAN] Buat pengumuman baru (global atau khusus event)',
+    summary:
+      '[SISWA/PANITIA/ADMIN_KESISWAAN] Buat pengumuman baru (global atau khusus event)',
     description:
       'Pengumuman global: PANITIA/ADMIN_KESISWAAN. ' +
       'Pengumuman event: ketua event atau committee member.',
@@ -48,8 +52,15 @@ export class AnnouncementsController {
   @ApiCreatedResponse({ description: 'Pengumuman berhasil dibuat' })
   @ApiResponse({ status: 400, description: 'Input data tidak valid' })
   @ApiResponse({ status: 403, description: 'Akses ditolak' })
-  async create(@CurrentUser() user: JwtPayload, @Body() dto: CreateAnnouncementDto) {
-    const created = await this.announcementsService.create(user.sub, user.role, dto);
+  async create(
+    @CurrentUser() user: JwtPayload,
+    @Body() dto: CreateAnnouncementDto,
+  ) {
+    const created = await this.announcementsService.create(
+      user.sub,
+      user.role,
+      dto,
+    );
     return new MessageResponse(created, 'Pengumuman berhasil dibuat');
   }
 
@@ -59,9 +70,16 @@ export class AnnouncementsController {
   @ApiOperation({
     summary: 'Daftar pengumuman (dengan pagination & filter event opsional)',
   })
-  @ApiQuery({ name: 'eventId', required: false, description: 'Filter by event ID' })
+  @ApiQuery({
+    name: 'eventId',
+    required: false,
+    description: 'Filter by event ID',
+  })
   @ApiOkResponse({ description: 'Daftar pengumuman berhasil diambil' })
-  async findAll(@Query() pagination: PaginationDto, @Query('eventId') eventId?: string) {
+  async findAll(
+    @Query() pagination: PaginationDto,
+    @Query('eventId') eventId?: string,
+  ) {
     const result = await this.announcementsService.findAll(pagination, eventId);
     return new Paginated(result.data, result.meta);
   }
