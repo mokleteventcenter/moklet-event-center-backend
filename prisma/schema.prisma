@@ -90,6 +90,7 @@ model Event {
   id                    String                 @id @default(uuid()) @db.Uuid
   name                  String
   description           String?
+  contactInfo           String?
   bannerUrl             String?
   bannerPublicId        String?
   guidebookUrl          String?
