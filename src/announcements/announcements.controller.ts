@@ -22,7 +22,7 @@ import {
 import { AnnouncementsService } from './announcements.service';
 import { CreateAnnouncementDto } from './dto/create-announcement.dto';
 import { UpdateAnnouncementDto } from './dto/update-announcement.dto';
-import { PaginationDto } from '../common/dto/pagination.dto';
+import { FindAllAnnouncementsDto } from './dto/find-all-announcements.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
@@ -76,11 +76,11 @@ export class AnnouncementsController {
     description: 'Filter by event ID',
   })
   @ApiOkResponse({ description: 'Daftar pengumuman berhasil diambil' })
-  async findAll(
-    @Query() pagination: PaginationDto,
-    @Query('eventId') eventId?: string,
-  ) {
-    const result = await this.announcementsService.findAll(pagination, eventId);
+  async findAll(@Query() query: FindAllAnnouncementsDto) {
+    const result = await this.announcementsService.findAll(
+      query,
+      query.eventId,
+    );
     return new Paginated(result.data, result.meta);
   }
 
