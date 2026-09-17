@@ -31,8 +31,6 @@ export class EventsService {
     status: 'ONGOING' | 'CLOSED' | 'ALL' = 'ONGOING',
   ) {
     const { skip, limit = 20, page = 1 } = pagination;
-    // Default ONGOING (kompatibel dengan perilaku lama); ALL untuk semua
-    // status, dipakai mis. halaman riwayat event panitia.
     const where = status === 'ALL' ? {} : { status };
     const [data, total] = await Promise.all([
       this.prisma.event.findMany({
@@ -41,10 +39,6 @@ export class EventsService {
         take: limit,
         orderBy: { eventDate: 'asc' },
         include: {
-          // _count pendaftar per kategori (Registration = 1 baris per
-          // peserta, individu maupun anggota tim) supaya klien bisa
-          // menampilkan jumlah pendaftar tanpa N+1 dan TANPA menjumlah
-          // teams + registrations (yang itu double counting).
           categories: {
             select: { _count: { select: { registrations: true } } },
           },
@@ -64,6 +58,14 @@ export class EventsService {
             ? [{ eventCommitteeMembers: { some: { studentId } } }]
             : []),
         ],
+      },
+      include: {
+        eventCommitteeMembers: {
+          include: {
+            student: { select: { id: true, name: true, photoUrl: true } },
+          },
+        },
+        _count: { select: { categories: true } },
       },
       orderBy: { eventDate: 'asc' },
     });
